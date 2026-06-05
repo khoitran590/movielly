@@ -169,6 +169,20 @@ CREATE POLICY "Users can delete their own friendships"
   ON public.friendships FOR DELETE
   USING (auth.uid() = requester_id OR auth.uid() = addressee_id);
 
+-- Accepted friends can view each other's watchlist (in addition to own)
+CREATE POLICY "Friends can view watchlist"
+  ON public.watchlist FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.friendships f
+      WHERE f.status = 'accepted'
+        AND (
+          (f.requester_id = auth.uid() AND f.addressee_id = watchlist.user_id)
+          OR (f.addressee_id = auth.uid() AND f.requester_id = watchlist.user_id)
+        )
+    )
+  );
+
 -- ─────────────────────────────────────────
 -- Allow backend service role to read favorites for shared lists
 -- (handled via service role key in Express — no extra policy needed)

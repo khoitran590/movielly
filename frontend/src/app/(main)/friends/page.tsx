@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Users, UserPlus, Check, X, Clock, Heart, UserMinus } from 'lucide-react';
+import { Users, UserPlus, Check, X, Clock, Heart, UserMinus, BookmarkCheck } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useFriends } from '@/hooks/useFriends';
 import { useToast } from '@/components/ui/Toast';
@@ -133,6 +133,12 @@ export default function FriendsPage() {
         ) : (
           friends.map(entry => row(entry, (
             <>
+              <Link
+                href={`/user/${entry.profile.id}`}
+                className="flex items-center gap-1 rounded-full glass glass-interactive text-slate-200 text-xs font-medium px-3 py-1.5"
+              >
+                <BookmarkCheck className="w-3.5 h-3.5 text-brand-light" /> Watchlist
+              </Link>
               {entry.shareToken && (
                 <Link
                   href={`/list/${entry.shareToken}`}
