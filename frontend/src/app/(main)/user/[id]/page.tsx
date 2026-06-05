@@ -13,6 +13,10 @@ import type { WatchlistItem, FriendProfile } from '@/types';
 
 type View = 'loading' | 'ok' | 'not-friends' | 'notfound';
 
+// Guard: ids come from the URL and are interpolated into PostgREST .or() filters,
+// so reject anything that isn't a canonical UUID before querying.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default function FriendProfilePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -29,6 +33,7 @@ export default function FriendProfilePage() {
 
   useEffect(() => {
     if (!user || !id) return;
+    if (!UUID_RE.test(id)) { setView('notfound'); return; }
     if (user.id === id) { router.replace('/watchlist'); return; }
 
     let active = true;

@@ -133,6 +133,10 @@ const handleTmdbError = (err, res) => {
   res.status(status).json({ error: message });
 };
 
+// TMDB ids are always positive integers; reject anything else before it gets
+// interpolated into a TMDB request path.
+const isNumericId = (id) => /^\d+$/.test(String(id));
+
 router.get('/search', async (req, res) => {
   const { query, page = 1, type = 'multi' } = req.query;
   if (!query?.trim()) return res.status(400).json({ error: 'Query is required' });
@@ -158,6 +162,7 @@ router.get('/trending', async (req, res) => {
 });
 
 router.get('/movie/:id', async (req, res) => {
+  if (!isNumericId(req.params.id)) return res.status(400).json({ error: 'Invalid id' });
   try {
     const { data } = await tmdb.get(`/movie/${req.params.id}`, {
       params: { append_to_response: 'credits,videos,similar' },
@@ -169,6 +174,7 @@ router.get('/movie/:id', async (req, res) => {
 });
 
 router.get('/tv/:id', async (req, res) => {
+  if (!isNumericId(req.params.id)) return res.status(400).json({ error: 'Invalid id' });
   try {
     const { data } = await tmdb.get(`/tv/${req.params.id}`, {
       params: { append_to_response: 'credits,videos,similar' },
@@ -206,6 +212,7 @@ router.get('/:type/:id/trailer', async (req, res) => {
   if (type !== 'movie' && type !== 'tv') {
     return res.status(400).json({ error: 'type must be "movie" or "tv"' });
   }
+  if (!isNumericId(id)) return res.status(400).json({ error: 'Invalid id' });
 
   let trailer = null;
   try {
@@ -231,6 +238,7 @@ router.get('/:type/:id/trailers', async (req, res) => {
   if (type !== 'movie' && type !== 'tv') {
     return res.status(400).json({ error: 'type must be "movie" or "tv"' });
   }
+  if (!isNumericId(id)) return res.status(400).json({ error: 'Invalid id' });
   try {
     const trailers = type === 'tv'
       ? await getTvSeasonTrailers(id)

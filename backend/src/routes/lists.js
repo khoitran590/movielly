@@ -1,11 +1,13 @@
 const express = require('express');
+const crypto = require('crypto');
 const { requireAuth, supabase } = require('../middleware/auth');
 const router = express.Router();
 
 router.post('/share', requireAuth, async (req, res) => {
   const { title } = req.body;
   try {
-    const shareToken = `${req.user.id.slice(0, 8)}-${Date.now().toString(36)}`;
+    // Unguessable, high-entropy token (128 bits) so favorites lists can't be enumerated.
+    const shareToken = crypto.randomBytes(16).toString('hex');
     const { data, error } = await supabase
       .from('shared_lists')
       .upsert({
