@@ -3,11 +3,11 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, BookmarkCheck, Heart, LogOut, User, Menu, X, Clapperboard } from 'lucide-react';
+import { Search, BookmarkCheck, Heart, Users, LogOut, User, Menu, X, Clapperboard } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 export default function Navbar() {
-  const { user, signOut } = useAuth();
+  const { user, username, signOut } = useAuth();
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -64,6 +64,10 @@ export default function Navbar() {
                   <Heart className="w-4 h-4" />
                   <span>Favorites</span>
                 </Link>
+                <Link href="/friends" className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm text-slate-300 hover:text-white hover:bg-surface-700 transition-colors">
+                  <Users className="w-4 h-4" />
+                  <span>Friends</span>
+                </Link>
                 <div ref={dropdownRef} className="relative hidden sm:block">
                   <button
                     onClick={() => setDropdownOpen(v => !v)}
@@ -72,9 +76,10 @@ export default function Navbar() {
                     <User className="w-4 h-4 text-brand-light" />
                   </button>
                   {dropdownOpen && (
-                    <div className="absolute right-0 top-11 w-44 bg-surface-800 border border-surface-600 rounded-xl shadow-xl overflow-hidden">
-                      <div className="px-3 py-2 border-b border-surface-600">
-                        <p className="text-xs text-slate-400 truncate">{user.email}</p>
+                    <div className="absolute right-0 top-11 w-52 bg-surface-800 border border-surface-600 rounded-xl shadow-xl overflow-hidden">
+                      <div className="px-3 py-2.5 border-b border-surface-600">
+                        <p className="text-sm font-medium text-slate-100 truncate">@{username || '…'}</p>
+                        <p className="text-xs text-slate-500 truncate">{user.email}</p>
                       </div>
                       <button
                         onClick={() => { signOut(); setDropdownOpen(false); }}
@@ -122,11 +127,18 @@ export default function Navbar() {
             </form>
             {user ? (
               <>
+                <div className="px-3 py-2 mb-1">
+                  <p className="text-sm font-medium text-slate-100 truncate">@{username || '…'}</p>
+                  <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                </div>
                 <Link href="/watchlist" className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm text-slate-300 hover:bg-surface-700" onClick={() => setMenuOpen(false)}>
                   <BookmarkCheck className="w-4 h-4" /> Watchlist
                 </Link>
                 <Link href="/favorites" className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm text-slate-300 hover:bg-surface-700" onClick={() => setMenuOpen(false)}>
                   <Heart className="w-4 h-4" /> Favorites
+                </Link>
+                <Link href="/friends" className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm text-slate-300 hover:bg-surface-700" onClick={() => setMenuOpen(false)}>
+                  <Users className="w-4 h-4" /> Friends
                 </Link>
                 <button
                   onClick={() => { signOut(); setMenuOpen(false); }}

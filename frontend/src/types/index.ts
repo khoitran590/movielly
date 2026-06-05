@@ -95,6 +95,19 @@ export interface SharedList {
   items: FavoriteItem[];
 }
 
+export interface FriendProfile {
+  id: string;
+  username: string | null;
+  avatar_url: string | null;
+}
+
+export interface FriendEntry {
+  friendshipId: string;
+  profile: FriendProfile;
+  since: string;
+  shareToken?: string | null;
+}
+
 export interface TrailerItem {
   youtube_video_id: string;
   label: string;

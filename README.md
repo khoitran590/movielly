@@ -21,18 +21,7 @@ A full-stack movie & TV discovery app. Search titles, watch trailers, write revi
 
 ## Getting started
 
-### 1. Supabase
-1. Create a project at [supabase.com](https://supabase.com).
-2. In the SQL Editor, run [`supabase/schema.sql`](supabase/schema.sql).
-3. Copy your Project URL, anon key, and service-role key from **Settings → API**.
-
-### 2. Environment
-```bash
-cp backend/.env.example backend/.env       # fill in TMDB + Supabase keys
-cp frontend/.env.example frontend/.env.local  # fill in Supabase URL + anon key
-```
-
-### 3. Install & run
+### 1. Install & run
 ```bash
 npm run install:all   # installs backend + frontend deps
 npm run dev           # starts backend :3001 and frontend :3000
