@@ -32,7 +32,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-40 w-full border-b border-surface-600 bg-surface-900/90 backdrop-blur-xl">
+    <nav className="sticky top-0 z-40 w-full border-b border-white/10 bg-surface-900/55 backdrop-blur-2xl backdrop-saturate-150 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="flex h-16 items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2 shrink-0" onClick={() => setMenuOpen(false)}>
@@ -41,14 +41,14 @@ export default function Navbar() {
           </Link>
 
           <form onSubmit={handleSearch} className="hidden sm:flex flex-1 max-w-md">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <div className="glass glass-interactive relative w-full rounded-full">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 z-[1]" />
               <input
                 type="search"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Search movies & shows..."
-                className="w-full bg-surface-700 border border-surface-500 text-slate-100 placeholder-slate-500 rounded-xl py-2 pl-9 pr-4 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition-all"
+                className="relative z-[1] w-full bg-transparent text-slate-100 placeholder-slate-400 rounded-full py-2 pl-10 pr-4 text-sm outline-none"
               />
             </div>
           </form>
