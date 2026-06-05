@@ -3,11 +3,11 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, BookmarkCheck, Heart, Users, LogOut, User, Menu, X, Clapperboard } from 'lucide-react';
+import { Search, BookmarkCheck, Heart, Users, LogOut, User, Menu, X, Clapperboard, Settings } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 export default function Navbar() {
-  const { user, username, signOut } = useAuth();
+  const { user, username, avatarUrl, signOut } = useAuth();
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -71,9 +71,13 @@ export default function Navbar() {
                 <div ref={dropdownRef} className="relative hidden sm:block">
                   <button
                     onClick={() => setDropdownOpen(v => !v)}
-                    className="flex items-center justify-center w-9 h-9 rounded-full bg-brand/20 border border-brand/40 hover:bg-brand/30 transition-colors"
+                    className="flex items-center justify-center w-9 h-9 rounded-full bg-brand/20 border border-brand/40 hover:bg-brand/30 transition-colors overflow-hidden"
                   >
-                    <User className="w-4 h-4 text-brand-light" />
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-4 h-4 text-brand-light" />
+                    )}
                   </button>
                   {dropdownOpen && (
                     <div className="absolute right-0 top-11 w-52 bg-surface-800 border border-surface-600 rounded-xl shadow-xl overflow-hidden">
@@ -81,9 +85,17 @@ export default function Navbar() {
                         <p className="text-sm font-medium text-slate-100 truncate">@{username || '…'}</p>
                         <p className="text-xs text-slate-500 truncate">{user.email}</p>
                       </div>
+                      <Link
+                        href="/settings"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-surface-700 transition-colors"
+                      >
+                        <Settings className="w-4 h-4" />
+                        Edit profile
+                      </Link>
                       <button
                         onClick={() => { signOut(); setDropdownOpen(false); }}
-                        className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-surface-700 transition-colors"
+                        className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-surface-700 transition-colors border-t border-surface-600"
                       >
                         <LogOut className="w-4 h-4" />
                         Sign out
@@ -139,6 +151,9 @@ export default function Navbar() {
                 </Link>
                 <Link href="/friends" className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm text-slate-300 hover:bg-surface-700" onClick={() => setMenuOpen(false)}>
                   <Users className="w-4 h-4" /> Friends
+                </Link>
+                <Link href="/settings" className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm text-slate-300 hover:bg-surface-700" onClick={() => setMenuOpen(false)}>
+                  <Settings className="w-4 h-4" /> Edit profile
                 </Link>
                 <button
                   onClick={() => { signOut(); setMenuOpen(false); }}

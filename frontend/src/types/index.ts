@@ -59,7 +59,7 @@ export interface Review {
   content: string | null;
   created_at: string;
   updated_at: string;
-  profiles?: { username: string | null; avatar_url: string | null };
+  profiles?: { username: string | null; avatar_url: string | null; bio?: string | null };
 }
 
 export interface WatchlistItem {
@@ -91,7 +91,7 @@ export interface UserProfile {
 
 export interface SharedList {
   title: string;
-  owner: { username: string | null; avatar_url: string | null } | null;
+  owner: { username: string | null; avatar_url: string | null; bio?: string | null } | null;
   items: FavoriteItem[];
 }
 
@@ -99,6 +99,7 @@ export interface FriendProfile {
   id: string;
   username: string | null;
   avatar_url: string | null;
+  bio?: string | null;
 }
 
 export interface FriendEntry {

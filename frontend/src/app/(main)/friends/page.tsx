@@ -64,9 +64,13 @@ export default function FriendsPage() {
       <Avatar entry={entry} />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-slate-100 line-clamp-1">{entry.profile.username || 'Unknown'}</p>
-        <p className="text-xs text-slate-400">
-          {new Date(entry.since).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-        </p>
+        {entry.profile.bio ? (
+          <p className="text-xs text-slate-400 line-clamp-1">{entry.profile.bio}</p>
+        ) : (
+          <p className="text-xs text-slate-500">
+            {new Date(entry.since).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          </p>
+        )}
       </div>
       <div className="flex items-center gap-2 shrink-0">{actions}</div>
     </div>

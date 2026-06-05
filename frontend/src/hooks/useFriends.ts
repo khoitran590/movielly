@@ -42,10 +42,10 @@ export function useFriends() {
     let tokenMap: Record<string, string> = {};
     if (ids.length) {
       const [{ data: profs }, { data: shared }] = await Promise.all([
-        supabase.from('profiles').select('id, username, avatar_url').in('id', ids),
+        supabase.from('profiles').select('id, username, avatar_url, bio').in('id', ids),
         supabase.from('shared_lists').select('user_id, share_token').in('user_id', ids),
       ]);
-      profileMap = Object.fromEntries((profs || []).map(p => [p.id, { id: p.id, username: p.username, avatar_url: p.avatar_url }]));
+      profileMap = Object.fromEntries((profs || []).map(p => [p.id, { id: p.id, username: p.username, avatar_url: p.avatar_url, bio: p.bio }]));
       tokenMap = Object.fromEntries((shared || []).map(s => [s.user_id, s.share_token]));
     }
 

@@ -41,7 +41,7 @@ export default function FriendProfilePage() {
       setView('loading');
       const { data: prof } = await supabase
         .from('profiles')
-        .select('id, username, avatar_url')
+        .select('id, username, avatar_url, bio')
         .eq('id', id)
         .maybeSingle();
       if (!active) return;
@@ -91,8 +91,9 @@ export default function FriendProfilePage() {
         </div>
         <div className="min-w-0">
           <h1 className="text-xl font-bold text-white truncate">@{name}</h1>
+          {profile?.bio && <p className="text-sm text-slate-300 mt-0.5 line-clamp-2">{profile.bio}</p>}
           {view === 'ok' && (
-            <p className="text-sm text-slate-400">{items.length} {items.length === 1 ? 'title' : 'titles'} in their watchlist</p>
+            <p className="text-xs text-slate-500 mt-1">{items.length} {items.length === 1 ? 'title' : 'titles'} in their watchlist</p>
           )}
         </div>
         {view === 'ok' && shareToken && (

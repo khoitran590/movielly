@@ -45,7 +45,7 @@ router.get('/:shareToken', async (req, res) => {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('username, avatar_url')
+      .select('username, avatar_url, bio')
       .eq('id', list.user_id)
       .single();
 

@@ -7,8 +7,10 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   id          UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   username    TEXT UNIQUE,
   avatar_url  TEXT,
+  bio         TEXT CHECK (char_length(bio) <= 280),
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
+-- Avatar uploads use a Supabase Storage bucket — see profile_bio_avatars.sql
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 

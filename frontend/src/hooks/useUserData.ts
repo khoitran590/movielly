@@ -98,13 +98,13 @@ export function useReviews(movieId?: number) {
     const rows = data || [];
     // Fetch author profiles separately (no FK between reviews and profiles to embed on).
     const userIds = [...new Set(rows.map(r => r.user_id))];
-    let profileMap: Record<string, { username: string | null; avatar_url: string | null }> = {};
+    let profileMap: Record<string, { username: string | null; avatar_url: string | null; bio: string | null }> = {};
     if (userIds.length) {
       const { data: profs } = await supabase
         .from('profiles')
-        .select('id, username, avatar_url')
+        .select('id, username, avatar_url, bio')
         .in('id', userIds);
-      profileMap = Object.fromEntries((profs || []).map(p => [p.id, { username: p.username, avatar_url: p.avatar_url }]));
+      profileMap = Object.fromEntries((profs || []).map(p => [p.id, { username: p.username, avatar_url: p.avatar_url, bio: p.bio }]));
     }
     const withProfiles = rows.map(r => ({ ...r, profiles: profileMap[r.user_id] || null }));
 

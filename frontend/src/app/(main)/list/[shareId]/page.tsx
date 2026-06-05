@@ -62,6 +62,9 @@ export default function SharedListPage() {
             <h1 className="text-xl font-bold text-white">{data.title}</h1>
           </div>
         </div>
+        {data.owner?.bio && (
+          <p className="text-sm text-slate-300 mt-1 mb-2">{data.owner.bio}</p>
+        )}
         <div className="flex items-center gap-2 mt-2">
           <Heart className="w-4 h-4 text-red-400 fill-red-400" />
           <span className="text-sm text-slate-300">{data.items.length} {data.items.length === 1 ? 'favorite' : 'favorites'}</span>

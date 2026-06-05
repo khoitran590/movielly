@@ -36,9 +36,12 @@ export default function ReviewCard({ review, isOwn, onEdit, onDelete }: ReviewCa
               <span className="text-sm font-semibold text-brand-light">{initial}</span>
             )}
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-medium text-slate-200">{username}</p>
             <p className="text-xs text-slate-500">{timeAgo(review.created_at)}</p>
+            {review.profiles?.bio && (
+              <p className="text-xs text-slate-500/80 italic line-clamp-1 mt-0.5">{review.profiles.bio}</p>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
