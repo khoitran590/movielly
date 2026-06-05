@@ -1,5 +1,4 @@
-import { formatDistanceToNow } from 'date-fns';
-import { User, Trash2, Pencil } from 'lucide-react';
+import { Trash2, Pencil } from 'lucide-react';
 import StarRating from './StarRating';
 import type { Review } from '@/types';
 
