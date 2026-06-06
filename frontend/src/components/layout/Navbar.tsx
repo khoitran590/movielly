@@ -2,13 +2,16 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Search, BookmarkCheck, Heart, Users, LogOut, User, Menu, X, Clapperboard, Settings } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 export default function Navbar() {
   const { user, username, avatarUrl, signOut } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  // The home page has its own prominent search bar, so hide the nav one there.
+  const showSearch = pathname !== '/';
   const [query, setQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -32,7 +35,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-40 w-full border-b border-white/10 bg-surface-900/55 backdrop-blur-2xl backdrop-saturate-150 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+    <nav className="sticky top-0 z-40 w-full border-b border-white/10 bg-surface-900/80 backdrop-blur-md shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="flex h-16 items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2 shrink-0" onClick={() => setMenuOpen(false)}>
@@ -40,18 +43,22 @@ export default function Navbar() {
             <span className="text-lg font-bold text-white">Movielly</span>
           </Link>
 
-          <form onSubmit={handleSearch} className="hidden sm:flex flex-1 max-w-md">
-            <div className="glass glass-interactive relative w-full rounded-full">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 z-[1]" />
-              <input
-                type="search"
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="Search movies & shows..."
-                className="relative z-[1] w-full bg-transparent text-slate-100 placeholder-slate-400 rounded-full py-2 pl-10 pr-4 text-sm outline-none"
-              />
-            </div>
-          </form>
+          {showSearch ? (
+            <form onSubmit={handleSearch} className="hidden sm:flex flex-1 max-w-md">
+              <div className="glass glass-interactive relative w-full rounded-full">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 z-[1]" />
+                <input
+                  type="search"
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  placeholder="Search movies & shows..."
+                  className="relative z-[1] w-full bg-transparent text-slate-100 placeholder-slate-400 rounded-full py-2 pl-10 pr-4 text-sm outline-none"
+                />
+              </div>
+            </form>
+          ) : (
+            <div className="hidden sm:block flex-1" />
+          )}
 
           <div className="flex items-center gap-2">
             {user ? (
@@ -125,18 +132,20 @@ export default function Navbar() {
 
         {menuOpen && (
           <div className="sm:hidden pb-4 space-y-2 border-t border-surface-600 pt-3 animate-fade-in">
-            <form onSubmit={handleSearch}>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="search"
-                  value={query}
-                  onChange={e => setQuery(e.target.value)}
-                  placeholder="Search movies & shows..."
-                  className="w-full bg-surface-700 border border-surface-500 text-slate-100 placeholder-slate-500 rounded-xl py-2 pl-9 pr-4 text-sm outline-none focus:border-brand"
-                />
-              </div>
-            </form>
+            {showSearch && (
+              <form onSubmit={handleSearch}>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="search"
+                    value={query}
+                    onChange={e => setQuery(e.target.value)}
+                    placeholder="Search movies & shows..."
+                    className="w-full bg-surface-700 border border-surface-500 text-slate-100 placeholder-slate-500 rounded-xl py-2 pl-9 pr-4 text-sm outline-none focus:border-brand"
+                  />
+                </div>
+              </form>
+            )}
             {user ? (
               <>
                 <div className="px-3 py-2 mb-1">

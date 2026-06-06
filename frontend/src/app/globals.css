@@ -69,8 +69,9 @@
       rgba(255, 255, 255, 0.04) 40%,
       rgba(255, 255, 255, 0.02) 100%
     );
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    /* Lighter blur = much cheaper compositing on low-end GPUs */
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
     border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow:
       0 10px 40px -8px rgba(0, 0, 0, 0.55),          /* float */
@@ -80,7 +81,7 @@
       inset 0 -12px 24px -16px rgba(0, 0, 0, 0.4);    /* bottom shade */
   }
 
-  /* Specular sheen + edge lensing highlight */
+  /* Specular sheen + edge lensing highlight (no blend-mode — cheaper to paint) */
   .glass::before {
     content: '';
     position: absolute;
@@ -88,9 +89,8 @@
     border-radius: inherit;
     pointer-events: none;
     background:
-      radial-gradient(120% 80% at 50% -10%, rgba(255, 255, 255, 0.22), transparent 55%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.10), transparent 30%);
-    mix-blend-mode: screen;
+      radial-gradient(120% 80% at 50% -10%, rgba(255, 255, 255, 0.18), transparent 55%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 30%);
     opacity: 0.9;
   }
 
@@ -127,13 +127,19 @@
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
+  contain: layout paint;  /* isolate paint/layout from the rest of the page */
 }
 .aurora__blob {
   position: absolute;
   border-radius: 9999px;
-  filter: blur(90px);
-  opacity: 0.55;
+  filter: blur(64px);     /* smaller blur radius is significantly cheaper */
+  opacity: 0.5;
   will-change: transform;
+}
+
+/* Drop the aurora animation on coarse pointers / small screens (phones, low-end) */
+@media (max-width: 640px), (pointer: coarse) {
+  .aurora__blob { animation: none !important; }
 }
 @keyframes auroraDrift1 {
   0%, 100% { transform: translate(0, 0) scale(1); }

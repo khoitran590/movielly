@@ -72,6 +72,28 @@ function HomeContent() {
     { id: 'tv', label: 'TV Shows', icon: <Tv className="w-4 h-4" /> },
   ];
 
+  const searchBar = (
+    <form onSubmit={handleSearch} className="max-w-xl mx-auto w-full">
+      <div className="glass glass-interactive flex items-center gap-2 rounded-full p-1.5 pl-5">
+        <Search className="relative z-[1] w-5 h-5 text-slate-300 shrink-0" />
+        <input
+          ref={inputRef}
+          type="search"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          placeholder="Search any movie or TV show..."
+          className="relative z-[1] flex-1 bg-transparent border-0 outline-none text-base text-slate-100 placeholder-slate-400 py-2.5"
+        />
+        <button
+          type="submit"
+          className="relative z-[1] shrink-0 rounded-full bg-brand hover:bg-brand-light text-white font-medium px-6 py-2.5 text-sm transition-colors shadow-lg shadow-brand/30"
+        >
+          Search
+        </button>
+      </div>
+    </form>
+  );
+
   return (
     <>
       <Aurora />
@@ -96,34 +118,19 @@ function HomeContent() {
                 </p>
 
                 {/* Glass search bar */}
-                <form onSubmit={handleSearch} className="max-w-xl mx-auto">
-                  <div className="glass glass-interactive flex items-center gap-2 rounded-full p-1.5 pl-5">
-                    <Search className="relative z-[1] w-5 h-5 text-slate-300 shrink-0" />
-                    <input
-                      ref={inputRef}
-                      type="search"
-                      value={input}
-                      onChange={e => setInput(e.target.value)}
-                      placeholder="Search any movie or TV show..."
-                      className="relative z-[1] flex-1 bg-transparent border-0 outline-none text-base text-slate-100 placeholder-slate-400 py-2.5"
-                    />
-                    <button
-                      type="submit"
-                      className="relative z-[1] shrink-0 rounded-full bg-brand hover:bg-brand-light text-white font-medium px-6 py-2.5 text-sm transition-colors shadow-lg shadow-brand/30"
-                    >
-                      Search
-                    </button>
-                  </div>
-                </form>
+                {searchBar}
               </div>
             </div>
           </section>
         )}
 
         {query && (
-          <h2 className="text-xl font-semibold text-slate-100">
-            Results for <span className="text-brand-light">&ldquo;{query}&rdquo;</span>
-          </h2>
+          <div className="space-y-5">
+            {searchBar}
+            <h2 className="text-xl font-semibold text-slate-100">
+              Results for <span className="text-brand-light">&ldquo;{query}&rdquo;</span>
+            </h2>
+          </div>
         )}
 
         {/* Glass segmented control */}
