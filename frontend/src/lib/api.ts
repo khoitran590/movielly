@@ -45,6 +45,11 @@ export const movies = {
     api.get<{ trailers: TrailerItem[] }>(
       `/api/movies/${type}/${id}/trailers`
     ).then(r => r.data.trailers),
+
+  similar: (type: 'movie' | 'tv', id: number) =>
+    api.get<{ results: Movie[] }>(
+      `/api/movies/${type}/${id}/similar`
+    ).then(r => r.data.results),
 };
 
 export const lists = {

@@ -12,7 +12,7 @@ import StarRating from '@/components/movie/StarRating';
 import ReviewCard from '@/components/movie/ReviewCard';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
-import MovieGrid from '@/components/movie/MovieGrid';
+import MovieCard from '@/components/movie/MovieCard';
 import TrailerList from '@/components/movie/TrailerList';
 import type { Movie, TrailerItem } from '@/types';
 
@@ -29,6 +29,7 @@ export default function MovieDetailPage() {
   const [saving, setSaving] = useState(false);
   const [trailers, setTrailers] = useState<TrailerItem[]>([]);
   const [activeTrailer, setActiveTrailer] = useState<string | null>(null);
+  const [similar, setSimilar] = useState<Movie[]>([]);
 
   const watchlist = useWatchlist();
   const favorites = useFavorites();
@@ -41,6 +42,9 @@ export default function MovieDetailPage() {
     movieApi.trailers('movie', Number(id))
       .then(setTrailers)
       .catch(() => setTrailers([]));
+    movieApi.similar('movie', Number(id))
+      .then(setSimilar)
+      .catch(() => setSimilar([]));
   }, [id]);
 
   useEffect(() => {
@@ -75,7 +79,6 @@ export default function MovieDetailPage() {
   const inFavorites = favorites.isInList(movie.id);
   const director = movie.credits?.crew?.find(c => c.job === 'Director');
   const topCast = movie.credits?.cast?.slice(0, 8) || [];
-  const similar = (movie.similar?.results || []).slice(0, 5).map(m => ({ ...m, media_type: 'movie' as const }));
 
   const toggleWatchlist = async () => {
     if (!user) { router.push('/login'); return; }
@@ -282,9 +285,7 @@ export default function MovieDetailPage() {
                 <h3 className="text-base font-semibold text-slate-100 mb-3">Similar Movies</h3>
                 <div className="grid grid-cols-2 gap-3">
                   {similar.slice(0, 4).map(m => (
-                    <div key={m.id}>
-                      <MovieGrid movies={[m]} />
-                    </div>
+                    <MovieCard key={m.id} movie={m} />
                   ))}
                 </div>
               </section>

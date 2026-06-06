@@ -165,7 +165,7 @@ router.get('/movie/:id', async (req, res) => {
   if (!isNumericId(req.params.id)) return res.status(400).json({ error: 'Invalid id' });
   try {
     const { data } = await tmdb.get(`/movie/${req.params.id}`, {
-      params: { append_to_response: 'credits,videos,similar' },
+      params: { append_to_response: 'credits' },
     });
     res.json(data);
   } catch (err) {
@@ -177,7 +177,7 @@ router.get('/tv/:id', async (req, res) => {
   if (!isNumericId(req.params.id)) return res.status(400).json({ error: 'Invalid id' });
   try {
     const { data } = await tmdb.get(`/tv/${req.params.id}`, {
-      params: { append_to_response: 'credits,videos,similar' },
+      params: { append_to_response: 'credits' },
     });
     res.json(data);
   } catch (err) {
@@ -244,6 +244,88 @@ router.get('/:type/:id/trailers', async (req, res) => {
       ? await getTvSeasonTrailers(id)
       : await getMovieCollectionTrailers(id);
     res.json({ trailers });
+  } catch (err) {
+    handleTmdbError(err, res);
+  }
+});
+
+// Theme-aware "similar" recommendations.
+// Combines TMDB recommendations + keyword-discover (theme) + genre-discover,
+// then ranks candidates by keyword/genre overlap so results share the movie's theme.
+router.get('/:type/:id/similar', async (req, res) => {
+  const { type, id } = req.params;
+  if (type !== 'movie' && type !== 'tv') {
+    return res.status(400).json({ error: 'type must be "movie" or "tv"' });
+  }
+  if (!isNumericId(id)) return res.status(400).json({ error: 'Invalid id' });
+
+  const base = type === 'tv' ? 'tv' : 'movie';
+  try {
+    const [detailsRes, keywordsRes, recsRes, similarRes] = await Promise.all([
+      tmdb.get(`/${base}/${id}`),
+      tmdb.get(`/${base}/${id}/keywords`).catch(() => ({ data: {} })),
+      tmdb.get(`/${base}/${id}/recommendations`).catch(() => ({ data: { results: [] } })),
+      tmdb.get(`/${base}/${id}/similar`).catch(() => ({ data: { results: [] } })),
+    ]);
+
+    const details = detailsRes.data;
+    const baseGenreIds = new Set((details.genres || []).map(g => g.id));
+    // movie keywords live under `keywords`, tv under `results`
+    const keywordList = keywordsRes.data.keywords || keywordsRes.data.results || [];
+    const keywordIds = keywordList.map(k => k.id);
+    const topKeywords = keywordIds.slice(0, 8);
+    const topGenres = [...baseGenreIds].slice(0, 2); // primary genres define the theme
+
+    // Discover thematically-related titles
+    const discoverCalls = [];
+    if (topKeywords.length) {
+      discoverCalls.push(tmdb.get(`/discover/${base}`, {
+        params: {
+          with_keywords: topKeywords.join('|'),          // OR — shares any theme keyword
+          sort_by: 'vote_count.desc',
+          'vote_count.gte': 40,
+          include_adult: false,
+        },
+      }).then(r => ({ tag: 'keyword', results: r.data.results })).catch(() => ({ tag: 'keyword', results: [] })));
+    }
+    if (topGenres.length) {
+      // Pure genre fallback (no keyword requirement) so same-genre films always surface.
+      discoverCalls.push(tmdb.get(`/discover/${base}`, {
+        params: {
+          with_genres: topGenres.join(','),              // AND — same core genres
+          sort_by: 'popularity.desc',
+          'vote_count.gte': 80,
+          include_adult: false,
+        },
+      }).then(r => ({ tag: 'genre', results: r.data.results })).catch(() => ({ tag: 'genre', results: [] })));
+    }
+    const discovered = await Promise.all(discoverCalls);
+
+    // Score & merge. A title appearing in multiple sources accumulates score.
+    const scores = new Map();
+    const addCandidates = (list, weight) => {
+      (list || []).forEach(m => {
+        if (String(m.id) === String(id)) return;       // not itself
+        if (!m.poster_path) return;                     // need artwork
+        const genreOverlap = (m.genre_ids || []).filter(g => baseGenreIds.has(g)).length;
+        const voteBonus = Math.min((m.vote_average || 0) / 10, 1);
+        const inc = weight + genreOverlap * 1.5 + voteBonus;
+        const cur = scores.get(m.id);
+        if (cur) cur.score += inc;
+        else scores.set(m.id, { movie: m, score: inc });
+      });
+    };
+
+    addCandidates(recsRes.data.results, 3);                                   // behavior-based (strong)
+    discovered.forEach(d => addCandidates(d.results, d.tag === 'keyword' ? 2.5 : 1)); // theme keywords > genre
+    addCandidates(similarRes.data.results, 0.75);                             // TMDB /similar — last-resort safety net
+
+    const results = [...scores.values()]
+      .sort((a, b) => b.score - a.score || (b.movie.vote_count || 0) - (a.movie.vote_count || 0))
+      .slice(0, 12)
+      .map(x => ({ ...x.movie, media_type: base }));
+
+    res.json({ results });
   } catch (err) {
     handleTmdbError(err, res);
   }
