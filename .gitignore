@@ -35,3 +35,6 @@ npm-debug.log*
 # claude code
 .claude/
 **/.claude/
+
+# Sentry Config File
+.env.sentry-build-plugin
