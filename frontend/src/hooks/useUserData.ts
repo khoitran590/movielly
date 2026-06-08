@@ -3,83 +3,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
-import type { WatchlistItem, FavoriteItem, Review } from '@/types';
+import type { Review } from '@/types';
 
-export function useWatchlist() {
-  const { user } = useAuth();
-  const [items, setItems] = useState<WatchlistItem[]>([]);
-  const supabase = createClient();
-
-  const fetchItems = useCallback(async () => {
-    if (!user) { setItems([]); return; }
-    const { data } = await supabase
-      .from('watchlist')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('added_at', { ascending: false });
-    setItems(data || []);
-  }, [user]);
-
-  useEffect(() => { fetchItems(); }, [fetchItems]);
-
-  const add = async (item: Omit<WatchlistItem, 'id' | 'user_id' | 'added_at'>) => {
-    if (!user) return;
-    const { data } = await supabase
-      .from('watchlist')
-      .insert({ ...item, user_id: user.id })
-      .select()
-      .single();
-    if (data) setItems(prev => [data, ...prev]);
-  };
-
-  const remove = async (movieId: number) => {
-    if (!user) return;
-    await supabase.from('watchlist').delete().eq('user_id', user.id).eq('movie_id', movieId);
-    setItems(prev => prev.filter(i => i.movie_id !== movieId));
-  };
-
-  const isInList = (movieId: number) => items.some(i => i.movie_id === movieId);
-
-  return { items, add, remove, isInList, refetch: fetchItems };
-}
-
-export function useFavorites() {
-  const { user } = useAuth();
-  const [items, setItems] = useState<FavoriteItem[]>([]);
-  const supabase = createClient();
-
-  const fetchItems = useCallback(async () => {
-    if (!user) { setItems([]); return; }
-    const { data } = await supabase
-      .from('favorites')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('added_at', { ascending: false });
-    setItems(data || []);
-  }, [user]);
-
-  useEffect(() => { fetchItems(); }, [fetchItems]);
-
-  const add = async (item: Omit<FavoriteItem, 'id' | 'user_id' | 'added_at'>) => {
-    if (!user) return;
-    const { data } = await supabase
-      .from('favorites')
-      .insert({ ...item, user_id: user.id })
-      .select()
-      .single();
-    if (data) setItems(prev => [data, ...prev]);
-  };
-
-  const remove = async (movieId: number) => {
-    if (!user) return;
-    await supabase.from('favorites').delete().eq('user_id', user.id).eq('movie_id', movieId);
-    setItems(prev => prev.filter(i => i.movie_id !== movieId));
-  };
-
-  const isInList = (movieId: number) => items.some(i => i.movie_id === movieId);
-
-  return { items, add, remove, isInList, refetch: fetchItems };
-}
+// useWatchlist lives in '@/context/WatchlistContext' and
+// useFavorites in '@/context/FavoritesContext' (shared single fetch each).
 
 export function useReviews(movieId?: number) {
   const { user } = useAuth();

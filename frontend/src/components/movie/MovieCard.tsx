@@ -2,8 +2,13 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Star, Tv, Film } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Star, Tv, Film, BookmarkPlus, BookmarkCheck, Heart } from 'lucide-react';
 import { getPosterUrl, getMovieTitle, getYear } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
+import { useWatchlist } from '@/context/WatchlistContext';
+import { useFavorites } from '@/context/FavoritesContext';
+import { useToast } from '@/components/ui/Toast';
 import type { Movie } from '@/types';
 
 interface MovieCardProps {
@@ -11,11 +16,52 @@ interface MovieCardProps {
 }
 
 export default function MovieCard({ movie }: MovieCardProps) {
+  const router = useRouter();
+  const { user } = useAuth();
+  const watchlist = useWatchlist();
+  const favorites = useFavorites();
+  const { toast } = useToast();
+
   const isTV = movie.media_type === 'tv' || (!movie.title && !!movie.name);
   const href = isTV ? `/tv/${movie.id}` : `/movie/${movie.id}`;
   const poster = getPosterUrl(movie.poster_path);
   const title = getMovieTitle(movie);
   const year = getYear(movie);
+  const inWatchlist = watchlist.isInList(movie.id);
+  const inFavorites = favorites.isInList(movie.id);
+
+  const payload = () => ({
+    movie_id: movie.id,
+    movie_title: title,
+    movie_poster: movie.poster_path,
+    movie_type: (isTV ? 'tv' : 'movie') as 'tv' | 'movie',
+  });
+
+  const toggleWatchlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) { router.push('/login'); return; }
+    if (inWatchlist) {
+      await watchlist.remove(movie.id);
+      toast(`Removed “${title}” from watchlist`);
+    } else {
+      await watchlist.add(payload());
+      toast(`Marked “${title}” as watched`);
+    }
+  };
+
+  const toggleFavorite = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) { router.push('/login'); return; }
+    if (inFavorites) {
+      await favorites.remove(movie.id);
+      toast(`Removed “${title}” from favorites`);
+    } else {
+      await favorites.add(payload());
+      toast(`Added “${title}” to favorites`);
+    }
+  };
 
   return (
     <Link href={href} className="group block">
@@ -46,6 +92,34 @@ export default function MovieCard({ movie }: MovieCardProps) {
               <span className="text-xs font-semibold text-white">{movie.vote_average.toFixed(1)}</span>
             </div>
           )}
+
+          {/* Quick action toggles: favorite (heart) + watched (bookmark) */}
+          <div className="absolute bottom-2 right-2 z-[2] flex items-center gap-1.5">
+            <button
+              onClick={toggleFavorite}
+              aria-label={inFavorites ? 'Remove from favorites' : 'Add to favorites'}
+              title={inFavorites ? 'In your favorites' : 'Add to favorites'}
+              className={`flex items-center justify-center w-9 h-9 rounded-full border backdrop-blur-sm transition-all duration-200 ${
+                inFavorites
+                  ? 'bg-red-500/90 border-red-400 text-white'
+                  : 'bg-black/55 border-white/20 text-white opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-red-500/80 hover:border-red-400 max-[640px]:opacity-100'
+              }`}
+            >
+              <Heart className={`w-4 h-4 ${inFavorites ? 'fill-white' : ''}`} />
+            </button>
+            <button
+              onClick={toggleWatchlist}
+              aria-label={inWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
+              title={inWatchlist ? 'Watched — in your watchlist' : 'Mark as watched'}
+              className={`flex items-center justify-center w-9 h-9 rounded-full border backdrop-blur-sm transition-all duration-200 ${
+                inWatchlist
+                  ? 'bg-brand/90 border-brand text-white'
+                  : 'bg-black/55 border-white/20 text-white opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-brand/80 hover:border-brand max-[640px]:opacity-100'
+              }`}
+            >
+              {inWatchlist ? <BookmarkCheck className="w-4 h-4" /> : <BookmarkPlus className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
         <div className="p-3">
           <h3 className="text-sm font-medium text-slate-100 line-clamp-1 group-hover:text-brand-light transition-colors">

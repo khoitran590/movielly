@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { BookmarkCheck, Trash2, Film, Tv } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { useWatchlist } from '@/hooks/useUserData';
+import { useWatchlist } from '@/context/WatchlistContext';
 import { useToast } from '@/components/ui/Toast';
 import { getPosterUrl } from '@/lib/api';
 import Button from '@/components/ui/Button';
@@ -34,19 +34,22 @@ export default function WatchlistPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6 animate-fade-in">
-      <div className="flex items-center gap-3">
-        <BookmarkCheck className="w-6 h-6 text-brand" />
-        <h1 className="text-2xl font-bold text-white">Watchlist</h1>
-        <span className="text-sm text-slate-400 bg-surface-700 px-2.5 py-0.5 rounded-full border border-surface-600">
-          {items.length} {items.length === 1 ? 'item' : 'items'}
-        </span>
+      <div className="space-y-1">
+        <div className="flex items-center gap-3">
+          <BookmarkCheck className="w-6 h-6 text-brand" />
+          <h1 className="text-2xl font-bold text-white">Watchlist</h1>
+          <span className="text-sm text-slate-400 bg-surface-700 px-2.5 py-0.5 rounded-full border border-surface-600">
+            {items.length} {items.length === 1 ? 'item' : 'items'}
+          </span>
+        </div>
+        <p className="text-sm text-slate-500 pl-9">Movies & shows you&apos;ve watched.</p>
       </div>
 
       {items.length === 0 ? (
         <div className="text-center py-20 space-y-4">
           <BookmarkCheck className="w-16 h-16 text-slate-600 mx-auto" />
           <p className="text-slate-400">Your watchlist is empty.</p>
-          <p className="text-sm text-slate-500">Browse movies and TV shows and add them to watch later.</p>
+          <p className="text-sm text-slate-500">Mark movies and shows you&apos;ve watched to keep track of them — tap the bookmark on any poster.</p>
           <Link href="/">
             <Button variant="primary" className="mt-2">Discover Movies</Button>
           </Link>

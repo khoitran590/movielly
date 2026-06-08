@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Heart, Trash2, Film, Tv, Share2, Copy, Check } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { useFavorites } from '@/hooks/useUserData';
+import { useFavorites } from '@/context/FavoritesContext';
 import { useToast } from '@/components/ui/Toast';
 import { getPosterUrl, lists } from '@/lib/api';
 import Button from '@/components/ui/Button';

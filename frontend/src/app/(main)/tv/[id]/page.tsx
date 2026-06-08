@@ -6,7 +6,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { BookmarkPlus, BookmarkCheck, Heart, Star, Play, Tv, Calendar, ChevronLeft } from 'lucide-react';
 import { movies as movieApi, getPosterUrl, getBackdropUrl } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import { useWatchlist, useFavorites, useReviews } from '@/hooks/useUserData';
+import { useReviews } from '@/hooks/useUserData';
+import { useWatchlist } from '@/context/WatchlistContext';
+import { useFavorites } from '@/context/FavoritesContext';
 import { useToast } from '@/components/ui/Toast';
 import StarRating from '@/components/movie/StarRating';
 import ReviewCard from '@/components/movie/ReviewCard';
@@ -74,7 +76,7 @@ export default function TvDetailPage() {
   const toggleWatchlist = async () => {
     if (!user) { router.push('/login'); return; }
     if (inWatchlist) { await watchlist.remove(show.id); toast('Removed from watchlist'); }
-    else { await watchlist.add({ movie_id: show.id, movie_title: title, movie_poster: show.poster_path, movie_type: 'tv' }); toast('Added to watchlist'); }
+    else { await watchlist.add({ movie_id: show.id, movie_title: title, movie_poster: show.poster_path, movie_type: 'tv' }); toast('Marked as watched'); }
   };
 
   const toggleFavorite = async () => {
@@ -147,7 +149,7 @@ export default function TvDetailPage() {
               )}
               <Button variant={inWatchlist ? 'secondary' : 'primary'} onClick={toggleWatchlist} size="sm">
                 {inWatchlist ? <BookmarkCheck className="w-4 h-4" /> : <BookmarkPlus className="w-4 h-4" />}
-                {inWatchlist ? 'In Watchlist' : 'Add to Watchlist'}
+                {inWatchlist ? 'Watched' : 'Mark as Watched'}
               </Button>
               <Button variant={inFavorites ? 'danger' : 'secondary'} onClick={toggleFavorite} size="sm">
                 <Heart className={`w-4 h-4 ${inFavorites ? 'fill-red-400' : ''}`} />
