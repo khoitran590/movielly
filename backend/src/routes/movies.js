@@ -206,6 +206,26 @@ router.get('/genres', async (req, res) => {
   }
 });
 
+// Browse by genre (used by the home-page genre filter)
+router.get('/discover', async (req, res) => {
+  const { type = 'movie', with_genres, page = 1, sort_by = 'popularity.desc' } = req.query;
+  const base = type === 'tv' ? 'tv' : 'movie';
+  try {
+    const { data } = await tmdb.get(`/discover/${base}`, {
+      params: {
+        with_genres,
+        page,
+        sort_by,
+        include_adult: false,
+        'vote_count.gte': 50,
+      },
+    });
+    res.json(data);
+  } catch (err) {
+    handleTmdbError(err, res);
+  }
+});
+
 // Hybrid trailer: KinoCheck first (curated official pick), TMDB as fallback.
 router.get('/:type/:id/trailer', async (req, res) => {
   const { type, id } = req.params;

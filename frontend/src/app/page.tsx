@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Search, TrendingUp, Film, Tv, Sparkles } from 'lucide-react';
+import { Search, TrendingUp, Film, Tv, Sparkles, SlidersHorizontal, Check, ChevronDown } from 'lucide-react';
 import { movies as movieApi } from '@/lib/api';
 import MovieGrid from '@/components/movie/MovieGrid';
 import Aurora from '@/components/ui/Aurora';
-import type { Movie } from '@/types';
+import type { Movie, Genre } from '@/types';
 
 type Tab = 'trending' | 'movies' | 'tv';
 
@@ -16,37 +16,57 @@ function HomeContent() {
   const query = searchParams.get('q') || '';
   const [input, setInput] = useState(query);
   const [tab, setTab] = useState<Tab>('trending');
+  const [genres, setGenres] = useState<Genre[]>([]);
+  const [genre, setGenre] = useState<number | null>(null);
+  const [genreOpen, setGenreOpen] = useState(false);
   const [results, setResults] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
+  const genreRef = useRef<HTMLDivElement>(null);
 
+  const mediaType: 'movie' | 'tv' = tab === 'tv' ? 'tv' : 'movie';
+
+  useEffect(() => { setInput(query); }, [query]);
+
+  // Load the genre list for the active media type; reset selection when it changes.
   useEffect(() => {
-    setInput(query);
-  }, [query]);
+    let active = true;
+    movieApi.genres(mediaType).then(g => { if (active) setGenres(g); }).catch(() => {});
+    setGenre(null);
+    return () => { active = false; };
+  }, [mediaType]);
+
+  // Close the genre menu on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (genreRef.current && !genreRef.current.contains(e.target as Node)) setGenreOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setResults([]);
 
-    const fetch = async () => {
+    const run = async () => {
       try {
         if (query) {
           const type = tab === 'movies' ? 'movie' : tab === 'tv' ? 'tv' : 'multi';
           const data = await movieApi.search(query, 1, type);
-          if (!cancelled) {
-            setResults(data.results.filter(m => m.media_type !== 'person' && (m.poster_path || m.backdrop_path)));
-          }
+          let res = data.results.filter(m => m.media_type !== 'person' && (m.poster_path || m.backdrop_path));
+          if (genre) res = res.filter(m => (m.genre_ids || []).includes(genre));
+          if (!cancelled) setResults(res);
+        } else if (genre) {
+          const data = await movieApi.discover(mediaType, genre);
+          if (!cancelled) setResults(data.results.map(m => ({ ...m, media_type: mediaType })));
+        } else if (tab === 'trending') {
+          const data = await movieApi.trending('week', 'all');
+          if (!cancelled) setResults(data.results.filter(m => m.media_type !== 'person'));
         } else {
-          if (tab === 'trending') {
-            const data = await movieApi.trending('week', 'all');
-            if (!cancelled) setResults(data.results.filter(m => m.media_type !== 'person'));
-          } else {
-            const data = await movieApi.popular(tab === 'movies' ? 'movie' : 'tv');
-            if (!cancelled) {
-              setResults(data.results.map(m => ({ ...m, media_type: tab === 'movies' ? 'movie' : 'tv' })));
-            }
-          }
+          const data = await movieApi.popular(mediaType);
+          if (!cancelled) setResults(data.results.map(m => ({ ...m, media_type: mediaType })));
         }
       } catch (e) {
         console.error(e);
@@ -55,15 +75,14 @@ function HomeContent() {
       }
     };
 
-    fetch();
+    run();
     return () => { cancelled = true; };
-  }, [query, tab]);
+  }, [query, tab, genre, mediaType]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const q = input.trim();
-    if (!q) { router.push('/'); return; }
-    router.push(`/?q=${encodeURIComponent(q)}`);
+    router.push(q ? `/?q=${encodeURIComponent(q)}` : '/');
   };
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
@@ -72,9 +91,11 @@ function HomeContent() {
     { id: 'tv', label: 'TV Shows', icon: <Tv className="w-4 h-4" /> },
   ];
 
+  const selectedGenreName = genre ? genres.find(g => g.id === genre)?.name : null;
+
   const searchBar = (
-    <form onSubmit={handleSearch} className="max-w-xl mx-auto w-full">
-      <div className="glass glass-interactive flex items-center gap-2 rounded-full p-1.5 pl-5">
+    <form onSubmit={handleSearch} className="mx-auto w-full max-w-2xl">
+      <div className="glass glass-interactive flex items-center gap-1 rounded-full p-1.5 pl-5">
         <Search className="relative z-[1] w-5 h-5 text-slate-300 shrink-0" />
         <input
           ref={inputRef}
@@ -82,11 +103,51 @@ function HomeContent() {
           value={input}
           onChange={e => setInput(e.target.value)}
           placeholder="Search any movie or TV show..."
-          className="relative z-[1] flex-1 bg-transparent border-0 outline-none text-base text-slate-100 placeholder-slate-400 py-2.5"
+          className="relative z-[1] flex-1 min-w-0 bg-transparent border-0 outline-none text-base text-slate-100 placeholder-slate-400 py-2.5"
         />
+
+        {/* Genre filter */}
+        <div ref={genreRef} className="relative z-[2] shrink-0">
+          <button
+            type="button"
+            onClick={() => setGenreOpen(v => !v)}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-sm transition-colors ${
+              genre ? 'text-brand-light' : 'text-slate-300 hover:text-white'
+            }`}
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            <span className="hidden sm:inline max-w-[7rem] truncate">{selectedGenreName || 'Genre'}</span>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${genreOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {genreOpen && (
+            <div className="absolute right-0 top-12 w-56 max-h-80 overflow-y-auto glass rounded-2xl p-1.5 shadow-2xl">
+              <button
+                type="button"
+                onClick={() => { setGenre(null); setGenreOpen(false); }}
+                className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-sm text-slate-200 hover:bg-white/5 transition-colors"
+              >
+                All genres
+                {!genre && <Check className="w-4 h-4 text-brand-light" />}
+              </button>
+              {genres.map(g => (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => { setGenre(g.id); setGenreOpen(false); }}
+                  className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-sm text-slate-200 hover:bg-white/5 transition-colors text-left"
+                >
+                  {g.name}
+                  {genre === g.id && <Check className="w-4 h-4 text-brand-light shrink-0" />}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <button
           type="submit"
-          className="relative z-[1] shrink-0 rounded-full bg-brand hover:bg-brand-light text-white font-medium px-6 py-2.5 text-sm transition-colors shadow-lg shadow-brand/30"
+          className="relative z-[1] shrink-0 rounded-full bg-brand hover:bg-brand-light text-white font-medium px-5 sm:px-6 py-2.5 text-sm transition-colors shadow-lg shadow-brand/30"
         >
           Search
         </button>
@@ -99,28 +160,21 @@ function HomeContent() {
       <Aurora />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
         {!query && (
-          <section className="relative py-10 sm:py-16">
-            {/* Hero card — Liquid Glass */}
-            <div className="glass glass-brand rounded-[2rem] px-6 sm:px-12 py-12 sm:py-16 text-center overflow-hidden">
-              <div className="relative z-[1] space-y-7">
-                <div className="glass glass-interactive inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium text-slate-200">
-                  <Sparkles className="w-3.5 h-3.5 text-brand-light" />
-                  Discover your next favorite
-                </div>
-                <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-white">
-                  Your movie universe,<br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-light via-fuchsia-400 to-sky-400">
-                    crystal clear.
-                  </span>
-                </h1>
-                <p className="text-base sm:text-lg text-slate-300/90 max-w-xl mx-auto">
-                  Search films & shows, write reviews, build your watchlist, and share your favorites.
-                </p>
-
-                {/* Glass search bar */}
-                {searchBar}
-              </div>
+          <section className="relative text-center pt-10 sm:pt-20 pb-4 space-y-7">
+            <div className="glass glass-interactive inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium text-slate-200">
+              <Sparkles className="w-3.5 h-3.5 text-brand-light" />
+              Discover your next favorite
             </div>
+            <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-white">
+              Your movie universe,<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-brand-light to-blue-500">
+                crystal clear.
+              </span>
+            </h1>
+            <p className="text-base sm:text-lg text-slate-300/90 max-w-xl mx-auto">
+              Search films &amp; shows, write reviews, track what you&apos;ve watched, and share your favorites.
+            </p>
+            {searchBar}
           </section>
         )}
 
@@ -129,11 +183,12 @@ function HomeContent() {
             {searchBar}
             <h2 className="text-xl font-semibold text-slate-100">
               Results for <span className="text-brand-light">&ldquo;{query}&rdquo;</span>
+              {selectedGenreName && <span className="text-slate-400 text-base font-normal"> · {selectedGenreName}</span>}
             </h2>
           </div>
         )}
 
-        {/* Glass segmented control */}
+        {/* Segmented control */}
         <div className="flex justify-center sm:justify-start">
           <div className="glass rounded-full p-1.5 inline-flex items-center gap-1">
             {tabs.map(t => {
@@ -143,9 +198,7 @@ function HomeContent() {
                   key={t.id}
                   onClick={() => setTab(t.id)}
                   className={`relative flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                    active
-                      ? 'glass glass-interactive text-white'
-                      : 'text-slate-300 hover:text-white'
+                    active ? 'glass glass-interactive text-white' : 'text-slate-300 hover:text-white'
                   }`}
                 >
                   {t.icon}
@@ -159,7 +212,11 @@ function HomeContent() {
         <MovieGrid
           movies={results}
           loading={loading}
-          emptyMessage={query ? `No results for "${query}"` : 'Nothing to show right now.'}
+          emptyMessage={
+            query
+              ? `No results for "${query}"${selectedGenreName ? ` in ${selectedGenreName}` : ''}`
+              : 'Nothing to show right now.'
+          }
         />
       </div>
     </>

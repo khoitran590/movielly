@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Movie, TmdbResponse, TrailerItem } from '@/types';
+import type { Movie, TmdbResponse, TrailerItem, Genre } from '@/types';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
@@ -35,6 +35,12 @@ export const movies = {
 
   popular: (type: 'movie' | 'tv' = 'movie', page = 1) =>
     api.get<TmdbResponse<Movie>>('/api/movies/popular', { params: { type, page } }).then(r => r.data),
+
+  genres: (type: 'movie' | 'tv' = 'movie') =>
+    api.get<{ genres: Genre[] }>('/api/movies/genres', { params: { type } }).then(r => r.data.genres),
+
+  discover: (type: 'movie' | 'tv', genreId: number, page = 1) =>
+    api.get<TmdbResponse<Movie>>('/api/movies/discover', { params: { type, with_genres: genreId, page } }).then(r => r.data),
 
   trailer: (type: 'movie' | 'tv', id: number) =>
     api.get<{ youtube_video_id: string | null; title: string | null; source: string | null }>(

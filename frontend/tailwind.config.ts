@@ -10,17 +10,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Cool blue-navy surfaces so the blue brand blends instead of contrasting
         surface: {
-          900: '#080810',
-          800: '#0e0e1a',
-          700: '#141424',
-          600: '#1c1c30',
-          500: '#25253e',
+          900: '#070c16',
+          800: '#0b1220',
+          700: '#111c30',
+          600: '#1a2842',
+          500: '#243a58',
         },
         brand: {
-          DEFAULT: '#7c3aed',
-          light: '#9d67f5',
-          dark: '#5b21b6',
+          DEFAULT: '#3b82f6',
+          light: '#60a5fa',
+          dark: '#1d4ed8',
         },
         gold: {
           DEFAULT: '#f59e0b',
