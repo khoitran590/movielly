@@ -1,4 +1,5 @@
-require('dotenv').config();
+// Initializes Sentry (and dotenv) — must stay the first require.
+const Sentry = require('./instrument');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -42,6 +43,9 @@ app.use('/api/lists', listsRouter);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Reports unhandled route errors to Sentry, then falls through to ours.
+Sentry.setupExpressErrorHandler(app);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

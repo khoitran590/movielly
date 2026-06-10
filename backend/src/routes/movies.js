@@ -1,6 +1,13 @@
 const express = require('express');
 const axios = require('axios');
+const Sentry = require('@sentry/node');
+const { cacheResponse } = require('../lib/cache');
 const router = express.Router();
+
+if (!process.env.TMDB_API_KEY) {
+  console.error('\n[Movielly] Missing TMDB config. Set TMDB_API_KEY in backend/.env\n');
+  process.exit(1);
+}
 
 const tmdb = axios.create({
   baseURL: process.env.TMDB_BASE_URL || 'https://api.themoviedb.org/3',
@@ -130,6 +137,11 @@ async function getTvSeasonTrailers(id) {
 const handleTmdbError = (err, res) => {
   const status = err.response?.status || 500;
   const message = err.response?.data?.status_message || 'Failed to fetch from TMDB';
+  // 4xx (bad id, not found) is expected noise; only report real failures.
+  if (status >= 500) {
+    console.error('TMDB request failed:', err.message);
+    Sentry.captureException(err);
+  }
   res.status(status).json({ error: message });
 };
 
@@ -137,7 +149,7 @@ const handleTmdbError = (err, res) => {
 // interpolated into a TMDB request path.
 const isNumericId = (id) => /^\d+$/.test(String(id));
 
-router.get('/search', async (req, res) => {
+router.get('/search', cacheResponse(10 * 60), async (req, res) => {
   const { query, page = 1, type = 'multi' } = req.query;
   if (!query?.trim()) return res.status(400).json({ error: 'Query is required' });
   try {
@@ -151,7 +163,7 @@ router.get('/search', async (req, res) => {
   }
 });
 
-router.get('/trending', async (req, res) => {
+router.get('/trending', cacheResponse(30 * 60), async (req, res) => {
   const { time_window = 'week', media_type = 'all' } = req.query;
   try {
     const { data } = await tmdb.get(`/trending/${media_type}/${time_window}`);
@@ -161,7 +173,7 @@ router.get('/trending', async (req, res) => {
   }
 });
 
-router.get('/movie/:id', async (req, res) => {
+router.get('/movie/:id', cacheResponse(60 * 60), async (req, res) => {
   if (!isNumericId(req.params.id)) return res.status(400).json({ error: 'Invalid id' });
   try {
     const { data } = await tmdb.get(`/movie/${req.params.id}`, {
@@ -173,7 +185,7 @@ router.get('/movie/:id', async (req, res) => {
   }
 });
 
-router.get('/tv/:id', async (req, res) => {
+router.get('/tv/:id', cacheResponse(60 * 60), async (req, res) => {
   if (!isNumericId(req.params.id)) return res.status(400).json({ error: 'Invalid id' });
   try {
     const { data } = await tmdb.get(`/tv/${req.params.id}`, {
@@ -185,7 +197,7 @@ router.get('/tv/:id', async (req, res) => {
   }
 });
 
-router.get('/popular', async (req, res) => {
+router.get('/popular', cacheResponse(30 * 60), async (req, res) => {
   const { type = 'movie', page = 1 } = req.query;
   try {
     const endpoint = type === 'tv' ? '/tv/popular' : '/movie/popular';
@@ -196,7 +208,7 @@ router.get('/popular', async (req, res) => {
   }
 });
 
-router.get('/genres', async (req, res) => {
+router.get('/genres', cacheResponse(24 * 60 * 60), async (req, res) => {
   const { type = 'movie' } = req.query;
   try {
     const { data } = await tmdb.get(`/genre/${type}/list`);
@@ -207,7 +219,7 @@ router.get('/genres', async (req, res) => {
 });
 
 // Browse by genre (used by the home-page genre filter)
-router.get('/discover', async (req, res) => {
+router.get('/discover', cacheResponse(30 * 60), async (req, res) => {
   const { type = 'movie', with_genres, page = 1, sort_by = 'popularity.desc' } = req.query;
   const base = type === 'tv' ? 'tv' : 'movie';
   try {
@@ -227,7 +239,7 @@ router.get('/discover', async (req, res) => {
 });
 
 // Hybrid trailer: KinoCheck first (curated official pick), TMDB as fallback.
-router.get('/:type/:id/trailer', async (req, res) => {
+router.get('/:type/:id/trailer', cacheResponse(6 * 60 * 60), async (req, res) => {
   const { type, id } = req.params;
   if (type !== 'movie' && type !== 'tv') {
     return res.status(400).json({ error: 'type must be "movie" or "tv"' });
@@ -253,7 +265,7 @@ router.get('/:type/:id/trailer', async (req, res) => {
 });
 
 // Multiple trailers: per-film for movie franchises, per-season for TV shows.
-router.get('/:type/:id/trailers', async (req, res) => {
+router.get('/:type/:id/trailers', cacheResponse(6 * 60 * 60), async (req, res) => {
   const { type, id } = req.params;
   if (type !== 'movie' && type !== 'tv') {
     return res.status(400).json({ error: 'type must be "movie" or "tv"' });
@@ -272,7 +284,7 @@ router.get('/:type/:id/trailers', async (req, res) => {
 // Theme-aware "similar" recommendations.
 // Combines TMDB recommendations + keyword-discover (theme) + genre-discover,
 // then ranks candidates by keyword/genre overlap so results share the movie's theme.
-router.get('/:type/:id/similar', async (req, res) => {
+router.get('/:type/:id/similar', cacheResponse(6 * 60 * 60), async (req, res) => {
   const { type, id } = req.params;
   if (type !== 'movie' && type !== 'tv') {
     return res.status(400).json({ error: 'type must be "movie" or "tv"' });

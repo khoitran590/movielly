@@ -60,7 +60,9 @@
    Layers: backdrop blur+saturation, adaptive tint, edge lensing,
    specular top highlight, soft drop shadow for "float".
    ────────────────────────────────────────────────────────────── */
-@layer utilities {
+/* Defined in the components layer (not utilities) so Tailwind utilities like
+   `absolute`/`fixed` can override the default position without !important. */
+@layer components {
   .glass {
     position: relative;
     background: linear-gradient(

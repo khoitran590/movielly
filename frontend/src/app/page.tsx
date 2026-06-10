@@ -121,7 +121,7 @@ function HomeContent() {
           </button>
 
           {genreOpen && (
-            <div className="!absolute right-0 top-12 w-56 max-h-80 overflow-y-auto glass rounded-2xl p-1.5 shadow-2xl">
+            <div className="absolute right-0 top-12 w-56 max-h-80 overflow-y-auto glass rounded-2xl p-1.5 shadow-2xl">
               <button
                 type="button"
                 onClick={() => { setGenre(null); setGenreOpen(false); }}

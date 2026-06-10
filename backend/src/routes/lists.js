@@ -1,5 +1,6 @@
 const express = require('express');
 const crypto = require('crypto');
+const Sentry = require('@sentry/node');
 const { requireAuth, supabase } = require('../middleware/auth');
 const router = express.Router();
 
@@ -21,6 +22,8 @@ router.post('/share', requireAuth, async (req, res) => {
     if (error) throw error;
     res.json({ share_token: data.share_token });
   } catch (err) {
+    console.error('Share link creation failed:', err);
+    Sentry.captureException(err);
     res.status(500).json({ error: 'Failed to create share link' });
   }
 });
@@ -51,6 +54,8 @@ router.get('/:shareToken', async (req, res) => {
 
     res.json({ title: list.title, owner: profile, items: favorites || [] });
   } catch (err) {
+    console.error('Shared list fetch failed:', err);
+    Sentry.captureException(err);
     res.status(500).json({ error: 'Failed to fetch shared list' });
   }
 });
