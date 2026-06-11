@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { BookmarkPlus, BookmarkCheck, Heart, Star, Play, Clock, Calendar, ChevronLeft } from 'lucide-react';
@@ -23,31 +24,29 @@ export default function MovieDetailPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [movie, setMovie] = useState<Movie | null>(null);
-  const [loading, setLoading] = useState(true);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewContent, setReviewContent] = useState('');
   const [saving, setSaving] = useState(false);
-  const [trailers, setTrailers] = useState<TrailerItem[]>([]);
   const [activeTrailer, setActiveTrailer] = useState<string | null>(null);
-  const [similar, setSimilar] = useState<Movie[]>([]);
+
+  const movieId = Number(id);
+  const { data: movie, isPending: loading } = useQuery({
+    queryKey: ['movie', movieId],
+    queryFn: () => movieApi.getMovie(movieId),
+  });
+  const { data: trailers = [] } = useQuery<TrailerItem[]>({
+    queryKey: ['trailers', 'movie', movieId],
+    queryFn: () => movieApi.trailers('movie', movieId),
+  });
+  const { data: similar = [] } = useQuery<Movie[]>({
+    queryKey: ['similar', 'movie', movieId],
+    queryFn: () => movieApi.similar('movie', movieId),
+  });
 
   const watchlist = useWatchlist();
   const favorites = useFavorites();
   const reviewData = useReviews(movie?.id);
-
-  useEffect(() => {
-    movieApi.getMovie(Number(id)).then(data => {
-      setMovie(data);
-    }).catch(() => {}).finally(() => setLoading(false));
-    movieApi.trailers('movie', Number(id))
-      .then(setTrailers)
-      .catch(() => setTrailers([]));
-    movieApi.similar('movie', Number(id))
-      .then(setSimilar)
-      .catch(() => setSimilar([]));
-  }, [id]);
 
   useEffect(() => {
     if (reviewData.userReview) {

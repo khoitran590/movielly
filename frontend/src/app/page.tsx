@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { Search, TrendingUp, Film, Tv, Sparkles, SlidersHorizontal, Check, ChevronDown } from 'lucide-react';
 import { movies as movieApi } from '@/lib/api';
 import MovieGrid from '@/components/movie/MovieGrid';
 import Aurora from '@/components/ui/Aurora';
-import type { Movie, Genre } from '@/types';
+import type { Movie } from '@/types';
 
 type Tab = 'trending' | 'movies' | 'tv';
 
@@ -16,11 +17,8 @@ function HomeContent() {
   const query = searchParams.get('q') || '';
   const [input, setInput] = useState(query);
   const [tab, setTab] = useState<Tab>('trending');
-  const [genres, setGenres] = useState<Genre[]>([]);
   const [genre, setGenre] = useState<number | null>(null);
   const [genreOpen, setGenreOpen] = useState(false);
-  const [results, setResults] = useState<Movie[]>([]);
-  const [loading, setLoading] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
   const genreRef = useRef<HTMLDivElement>(null);
 
@@ -28,13 +26,14 @@ function HomeContent() {
 
   useEffect(() => { setInput(query); }, [query]);
 
-  // Load the genre list for the active media type; reset selection when it changes.
-  useEffect(() => {
-    let active = true;
-    movieApi.genres(mediaType).then(g => { if (active) setGenres(g); }).catch(() => {});
-    setGenre(null);
-    return () => { active = false; };
-  }, [mediaType]);
+  // Genre list for the active media type (cached per type); reset the
+  // selection when the type changes.
+  const { data: genres = [] } = useQuery({
+    queryKey: ['genres', mediaType],
+    queryFn: () => movieApi.genres(mediaType),
+    staleTime: 24 * 60 * 60 * 1000, // genre lists are effectively static
+  });
+  useEffect(() => { setGenre(null); }, [mediaType]);
 
   // Close the genre menu on outside click
   useEffect(() => {
@@ -45,39 +44,30 @@ function HomeContent() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setResults([]);
-
-    const run = async () => {
-      try {
-        if (query) {
-          const type = tab === 'movies' ? 'movie' : tab === 'tv' ? 'tv' : 'multi';
-          const data = await movieApi.search(query, 1, type);
-          let res = data.results.filter(m => m.media_type !== 'person' && (m.poster_path || m.backdrop_path));
-          if (genre) res = res.filter(m => (m.genre_ids || []).includes(genre));
-          if (!cancelled) setResults(res);
-        } else if (genre) {
-          const data = await movieApi.discover(mediaType, genre);
-          if (!cancelled) setResults(data.results.map(m => ({ ...m, media_type: mediaType })));
-        } else if (tab === 'trending') {
-          const data = await movieApi.trending('week', 'all');
-          if (!cancelled) setResults(data.results.filter(m => m.media_type !== 'person'));
-        } else {
-          const data = await movieApi.popular(mediaType);
-          if (!cancelled) setResults(data.results.map(m => ({ ...m, media_type: mediaType })));
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        if (!cancelled) setLoading(false);
+  // Browse results — React Query keys on the full filter state, so previously
+  // visited tab/genre/search combinations come back instantly from cache.
+  const { data: results = [], isPending: loading } = useQuery({
+    queryKey: ['browse', { query, tab, genre }],
+    queryFn: async (): Promise<Movie[]> => {
+      if (query) {
+        const type = tab === 'movies' ? 'movie' : tab === 'tv' ? 'tv' : 'multi';
+        const data = await movieApi.search(query, 1, type);
+        let res = data.results.filter(m => m.media_type !== 'person' && (m.poster_path || m.backdrop_path));
+        if (genre) res = res.filter(m => (m.genre_ids || []).includes(genre));
+        return res;
       }
-    };
-
-    run();
-    return () => { cancelled = true; };
-  }, [query, tab, genre, mediaType]);
+      if (genre) {
+        const data = await movieApi.discover(mediaType, genre);
+        return data.results.map(m => ({ ...m, media_type: mediaType }));
+      }
+      if (tab === 'trending') {
+        const data = await movieApi.trending('week', 'all');
+        return data.results.filter(m => m.media_type !== 'person');
+      }
+      const data = await movieApi.popular(mediaType);
+      return data.results.map(m => ({ ...m, media_type: mediaType }));
+    },
+  });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

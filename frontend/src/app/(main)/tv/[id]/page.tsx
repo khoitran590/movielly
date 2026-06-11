@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { BookmarkPlus, BookmarkCheck, Heart, Star, Play, Tv, Calendar, ChevronLeft } from 'lucide-react';
@@ -22,27 +23,25 @@ export default function TvDetailPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [show, setShow] = useState<Movie | null>(null);
-  const [loading, setLoading] = useState(true);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewContent, setReviewContent] = useState('');
   const [saving, setSaving] = useState(false);
-  const [trailers, setTrailers] = useState<TrailerItem[]>([]);
   const [activeTrailer, setActiveTrailer] = useState<string | null>(null);
+
+  const tvId = Number(id);
+  const { data: show, isPending: loading } = useQuery({
+    queryKey: ['tv', tvId],
+    queryFn: () => movieApi.getTv(tvId),
+  });
+  const { data: trailers = [] } = useQuery<TrailerItem[]>({
+    queryKey: ['trailers', 'tv', tvId],
+    queryFn: () => movieApi.trailers('tv', tvId),
+  });
 
   const watchlist = useWatchlist();
   const favorites = useFavorites();
   const reviewData = useReviews(show?.id);
-
-  useEffect(() => {
-    movieApi.getTv(Number(id)).then(data => {
-      setShow(data);
-    }).catch(() => {}).finally(() => setLoading(false));
-    movieApi.trailers('tv', Number(id))
-      .then(setTrailers)
-      .catch(() => setTrailers([]));
-  }, [id]);
 
   useEffect(() => {
     if (reviewData.userReview) {

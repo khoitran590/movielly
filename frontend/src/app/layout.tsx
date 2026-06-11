@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
-import { WatchlistProvider } from '@/context/WatchlistContext';
-import { FavoritesProvider } from '@/context/FavoritesContext';
+import Providers from '@/components/Providers';
 import { ToastProvider } from '@/components/ui/Toast';
 import Navbar from '@/components/layout/Navbar';
 
@@ -20,10 +19,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body>
-        <AuthProvider>
-          <ToastProvider>
-            <WatchlistProvider>
-              <FavoritesProvider>
+        <Providers>
+          <AuthProvider>
+            <ToastProvider>
               <Navbar />
               <main className="min-h-[calc(100vh-4rem)]">
                 {children}
@@ -33,10 +31,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <p>© {new Date().getFullYear()} Movielly. Movie data from TMDB.</p>
                 </div>
               </footer>
-              </FavoritesProvider>
-            </WatchlistProvider>
-          </ToastProvider>
-        </AuthProvider>
+            </ToastProvider>
+          </AuthProvider>
+        </Providers>
       </body>
     </html>
   );

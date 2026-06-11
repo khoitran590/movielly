@@ -1,56 +1,65 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { friendships, profiles, sharedLists, type FriendshipRow } from '@/lib/db';
 import { useAuth } from '@/context/AuthContext';
 import type { FriendEntry, FriendProfile } from '@/types';
 
 type ActionResult = { ok: boolean; message?: string };
 
+interface FriendsData {
+  friends: FriendEntry[];
+  incoming: FriendEntry[];
+  outgoing: FriendEntry[];
+}
+
+const EMPTY: FriendsData = { friends: [], incoming: [], outgoing: [] };
+
+async function fetchFriends(userId: string): Promise<FriendsData> {
+  const rows = await friendships.listFor(userId);
+  const otherId = (r: FriendshipRow) => (r.requester_id === userId ? r.addressee_id : r.requester_id);
+
+  // Profiles for everyone we have a relationship with
+  const ids = [...new Set(rows.map(otherId))];
+  let profileMap: Record<string, FriendProfile> = {};
+  let tokenMap: Record<string, string> = {};
+  if (ids.length) {
+    const [profs, shared] = await Promise.all([
+      profiles.getMany(ids),
+      sharedLists.getTokens(ids),
+    ]);
+    profileMap = Object.fromEntries(profs.map(p => [p.id, p]));
+    tokenMap = Object.fromEntries(shared.map(s => [s.user_id, s.share_token]));
+  }
+
+  const toEntry = (r: FriendshipRow): FriendEntry => {
+    const oid = otherId(r);
+    return {
+      friendshipId: r.id,
+      profile: profileMap[oid] || { id: oid, username: 'Unknown', avatar_url: null },
+      since: r.created_at,
+      shareToken: tokenMap[oid] || null,
+    };
+  };
+
+  return {
+    friends: rows.filter(r => r.status === 'accepted').map(toEntry),
+    incoming: rows.filter(r => r.status === 'pending' && r.addressee_id === userId).map(toEntry),
+    outgoing: rows.filter(r => r.status === 'pending' && r.requester_id === userId).map(toEntry),
+  };
+}
+
 export function useFriends() {
   const { user } = useAuth();
-  const [friends, setFriends] = useState<FriendEntry[]>([]);
-  const [incoming, setIncoming] = useState<FriendEntry[]>([]);
-  const [outgoing, setOutgoing] = useState<FriendEntry[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const fetchAll = useCallback(async () => {
-    if (!user) { setFriends([]); setIncoming([]); setOutgoing([]); setLoading(false); return; }
-    setLoading(true);
+  const { data = EMPTY, isLoading, refetch } = useQuery({
+    queryKey: ['friends', user?.id],
+    queryFn: () => fetchFriends(user!.id),
+    enabled: !!user,
+  });
 
-    const rows = await friendships.listFor(user.id);
-    const otherId = (r: FriendshipRow) => (r.requester_id === user.id ? r.addressee_id : r.requester_id);
-
-    // Profiles for everyone we have a relationship with
-    const ids = [...new Set(rows.map(otherId))];
-    let profileMap: Record<string, FriendProfile> = {};
-    let tokenMap: Record<string, string> = {};
-    if (ids.length) {
-      const [profs, shared] = await Promise.all([
-        profiles.getMany(ids),
-        sharedLists.getTokens(ids),
-      ]);
-      profileMap = Object.fromEntries(profs.map(p => [p.id, p]));
-      tokenMap = Object.fromEntries(shared.map(s => [s.user_id, s.share_token]));
-    }
-
-    const toEntry = (r: FriendshipRow): FriendEntry => {
-      const oid = otherId(r);
-      return {
-        friendshipId: r.id,
-        profile: profileMap[oid] || { id: oid, username: 'Unknown', avatar_url: null },
-        since: r.created_at,
-        shareToken: tokenMap[oid] || null,
-      };
-    };
-
-    setFriends(rows.filter(r => r.status === 'accepted').map(toEntry));
-    setIncoming(rows.filter(r => r.status === 'pending' && r.addressee_id === user.id).map(toEntry));
-    setOutgoing(rows.filter(r => r.status === 'pending' && r.requester_id === user.id).map(toEntry));
-    setLoading(false);
-  }, [user]);
-
-  useEffect(() => { fetchAll(); }, [fetchAll]);
+  const refetchVoid = useCallback(async () => { await refetch(); }, [refetch]);
 
   const addFriend = useCallback(async (username: string): Promise<ActionResult> => {
     if (!user) return { ok: false, message: 'Not signed in' };
@@ -69,29 +78,38 @@ export function useFriends() {
       // Incoming pending from them -> accept it
       const { error } = await friendships.accept(existing.id);
       if (error) return { ok: false, message: 'Could not accept request' };
-      await fetchAll();
+      await refetch();
       return { ok: true, message: `You and ${target.username} are now friends` };
     }
 
     const { error } = await friendships.request(user.id, target.id);
     if (error) return { ok: false, message: 'Could not send request' };
-    await fetchAll();
+    await refetch();
     return { ok: true, message: `Friend request sent to ${target.username}` };
-  }, [user, fetchAll]);
+  }, [user, refetch]);
 
   const accept = useCallback(async (friendshipId: string): Promise<ActionResult> => {
     const { error } = await friendships.accept(friendshipId);
     if (error) return { ok: false, message: 'Could not accept' };
-    await fetchAll();
+    await refetch();
     return { ok: true };
-  }, [fetchAll]);
+  }, [refetch]);
 
   const remove = useCallback(async (friendshipId: string): Promise<ActionResult> => {
     const { error } = await friendships.remove(friendshipId);
     if (error) return { ok: false, message: 'Could not remove' };
-    await fetchAll();
+    await refetch();
     return { ok: true };
-  }, [fetchAll]);
+  }, [refetch]);
 
-  return { friends, incoming, outgoing, loading, addFriend, accept, remove, refetch: fetchAll };
+  return {
+    friends: data.friends,
+    incoming: data.incoming,
+    outgoing: data.outgoing,
+    loading: !!user && isLoading,
+    addFriend,
+    accept,
+    remove,
+    refetch: refetchVoid,
+  };
 }
