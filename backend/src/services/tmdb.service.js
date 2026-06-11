@@ -36,4 +36,9 @@ const genreList = (type) =>
 const discover = (base, params) =>
   tmdb.get(`/discover/${base}`, { params }).then(r => r.data);
 
-module.exports = { tmdb, search, trending, details, popular, genreList, discover };
+// JustWatch-powered streaming availability, per region (TMDB requires the
+// "JustWatch" attribution wherever this data is shown).
+const watchProviders = (base, id) =>
+  tmdb.get(`/${base}/${id}/watch/providers`).then(r => r.data);
+
+module.exports = { tmdb, search, trending, details, popular, genreList, discover, watchProviders };

@@ -116,6 +116,20 @@ export interface TrailerItem {
   poster_path: string | null;
 }
 
+export interface WatchProvider {
+  provider_id: number;
+  provider_name: string;
+  logo_path: string | null;
+}
+
+export interface WatchProviders {
+  region: string;
+  link: string | null;
+  stream: WatchProvider[];
+  rent: WatchProvider[];
+  buy: WatchProvider[];
+}
+
 export interface TmdbResponse<T> {
   page: number;
   results: T[];

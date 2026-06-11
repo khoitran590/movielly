@@ -17,6 +17,7 @@ import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import MovieCard from '@/components/movie/MovieCard';
 import TrailerList from '@/components/movie/TrailerList';
+import WhereToWatch from '@/components/movie/WhereToWatch';
 import type { Movie, TrailerItem } from '@/types';
 
 export default function MovieDetailPage() {
@@ -260,6 +261,8 @@ export default function MovieDetailPage() {
           </div>
 
           <div className="space-y-6">
+            <WhereToWatch type="movie" id={movie.id} />
+
             <div className="bg-surface-700 border border-surface-600 rounded-xl p-4 space-y-3 text-sm">
               {director && (
                 <div className="flex justify-between">

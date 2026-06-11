@@ -119,3 +119,27 @@ exports.similar = async (req, res) => {
     handleTmdbError(err, res);
   }
 };
+
+// Where to watch — streaming/rent/buy availability for one region (JustWatch
+// via TMDB). Returns a trimmed, region-picked shape the frontend renders as-is.
+exports.providers = async (req, res) => {
+  const { type, id } = req.params;
+  const region = (req.query.region || 'US').toString().toUpperCase();
+  const base = type === 'tv' ? 'tv' : 'movie';
+  try {
+    const data = await tmdbService.watchProviders(base, id);
+    const r = data.results?.[region] || {};
+    const trim = (list) => (list || [])
+      .sort((a, b) => a.display_priority - b.display_priority)
+      .map(p => ({ provider_id: p.provider_id, provider_name: p.provider_name, logo_path: p.logo_path }));
+    res.json({
+      region,
+      link: r.link || null,           // JustWatch page for this title+region
+      stream: trim(r.flatrate),       // included with a subscription
+      rent: trim(r.rent),
+      buy: trim(r.buy),
+    });
+  } catch (err) {
+    handleTmdbError(err, res);
+  }
+};

@@ -15,5 +15,6 @@ router.get('/discover', cacheResponse(30 * 60), ctrl.discover);
 router.get('/:type/:id/trailer', validateTypeAndId, cacheResponse(6 * 60 * 60), ctrl.trailer);
 router.get('/:type/:id/trailers', validateTypeAndId, cacheResponse(6 * 60 * 60), ctrl.trailers);
 router.get('/:type/:id/similar', validateTypeAndId, cacheResponse(6 * 60 * 60), ctrl.similar);
+router.get('/:type/:id/providers', validateTypeAndId, cacheResponse(24 * 60 * 60), ctrl.providers);
 
 module.exports = router;

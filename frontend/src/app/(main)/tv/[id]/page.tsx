@@ -16,6 +16,7 @@ import ReviewCard from '@/components/movie/ReviewCard';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import TrailerList from '@/components/movie/TrailerList';
+import WhereToWatch from '@/components/movie/WhereToWatch';
 import type { Movie, TrailerItem } from '@/types';
 
 export default function TvDetailPage() {
@@ -169,6 +170,9 @@ export default function TvDetailPage() {
               <p className="text-slate-300 leading-relaxed">{show.overview}</p>
             </section>
           )}
+          <div className="max-w-md">
+            <WhereToWatch type="tv" id={show.id} />
+          </div>
           <TrailerList trailers={trailers} onSelect={setActiveTrailer} heading="Season Trailers" />
           {topCast.length > 0 && (
             <section>
