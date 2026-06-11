@@ -9,6 +9,7 @@ import { movies as movieApi } from '@/lib/api';
 import MovieGrid from '@/components/movie/MovieGrid';
 import Aurora from '@/components/ui/Aurora';
 import { LampContainer } from '@/components/ui/lamp';
+import { GlassEffect } from '@/components/ui/liquid-glass';
 import type { Movie } from '@/types';
 
 type Tab = 'trending' | 'movies' | 'tv';
@@ -87,63 +88,69 @@ function HomeContent() {
 
   const searchBar = (
     <form onSubmit={handleSearch} className="mx-auto w-full max-w-2xl">
-      <div className="glass glass-tinted glass-interactive flex items-center gap-1 rounded-full p-1.5 pl-5">
-        <Search className="relative z-[1] w-5 h-5 text-slate-300 shrink-0" />
-        <input
-          ref={inputRef}
-          type="search"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          placeholder="Search any movie or TV show..."
-          className="relative z-[1] flex-1 min-w-0 bg-transparent border-0 outline-none text-base text-slate-100 placeholder-slate-400 py-2.5"
-        />
+      <GlassEffect className="rounded-full w-full">
+        <div className="flex items-center gap-1 p-1.5 pl-5 w-full font-normal">
+          <Search className="w-5 h-5 text-slate-200 shrink-0" />
+          <input
+            ref={inputRef}
+            type="search"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            placeholder="Search any movie or TV show..."
+            className="flex-1 min-w-0 bg-transparent border-0 outline-none text-base text-white placeholder-slate-300 py-2.5"
+          />
 
-        {/* Genre filter */}
-        <div ref={genreRef} className="relative z-[2] shrink-0">
+          {/* Genre filter */}
+          <div ref={genreRef} className="relative shrink-0">
+            <button
+              type="button"
+              onClick={() => setGenreOpen(v => !v)}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-sm transition-all duration-300 ${
+                genre ? 'bg-white/25 text-white' : 'text-slate-200 hover:bg-white/15 hover:text-white'
+              }`}
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              <span className="hidden sm:inline max-w-[7rem] truncate">{selectedGenreName || 'Genre'}</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${genreOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {genreOpen && (
+              <div className="absolute right-0 top-12 w-56 z-50">
+                <GlassEffect className="rounded-2xl w-full">
+                  <div className="max-h-80 overflow-y-auto p-1.5">
+                    <button
+                      type="button"
+                      onClick={() => { setGenre(null); setGenreOpen(false); }}
+                      className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-sm text-white hover:bg-white/15 transition-colors"
+                    >
+                      All genres
+                      {!genre && <Check className="w-4 h-4 text-white" />}
+                    </button>
+                    {genres.map(g => (
+                      <button
+                        key={g.id}
+                        type="button"
+                        onClick={() => { setGenre(g.id); setGenreOpen(false); }}
+                        className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-sm text-white hover:bg-white/15 transition-colors text-left"
+                      >
+                        {g.name}
+                        {genre === g.id && <Check className="w-4 h-4 text-white shrink-0" />}
+                      </button>
+                    ))}
+                  </div>
+                </GlassEffect>
+              </div>
+            )}
+          </div>
+
           <button
-            type="button"
-            onClick={() => setGenreOpen(v => !v)}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-sm transition-colors ${
-              genre ? 'text-brand-light' : 'text-slate-300 hover:text-white'
-            }`}
+            type="submit"
+            className="shrink-0 rounded-full bg-brand hover:bg-brand-light text-white font-medium px-5 sm:px-6 py-2.5 text-sm transition-colors shadow-lg shadow-brand/30"
           >
-            <SlidersHorizontal className="w-4 h-4" />
-            <span className="hidden sm:inline max-w-[7rem] truncate">{selectedGenreName || 'Genre'}</span>
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${genreOpen ? 'rotate-180' : ''}`} />
+            Search
           </button>
-
-          {genreOpen && (
-            <div className="absolute right-0 top-12 w-56 max-h-80 overflow-y-auto glass glass-tinted rounded-2xl p-1.5 shadow-2xl">
-              <button
-                type="button"
-                onClick={() => { setGenre(null); setGenreOpen(false); }}
-                className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-sm text-slate-200 hover:bg-white/5 transition-colors"
-              >
-                All genres
-                {!genre && <Check className="w-4 h-4 text-brand-light" />}
-              </button>
-              {genres.map(g => (
-                <button
-                  key={g.id}
-                  type="button"
-                  onClick={() => { setGenre(g.id); setGenreOpen(false); }}
-                  className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-sm text-slate-200 hover:bg-white/5 transition-colors text-left"
-                >
-                  {g.name}
-                  {genre === g.id && <Check className="w-4 h-4 text-brand-light shrink-0" />}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
-
-        <button
-          type="submit"
-          className="relative z-[1] shrink-0 rounded-full bg-brand hover:bg-brand-light text-white font-medium px-5 sm:px-6 py-2.5 text-sm transition-colors shadow-lg shadow-brand/30"
-        >
-          Search
-        </button>
-      </div>
+      </GlassEffect>
     </form>
   );
 
@@ -190,25 +197,27 @@ function HomeContent() {
           </div>
         )}
 
-        {/* Segmented control */}
+        {/* Segmented control — same liquid-glass material as the dock */}
         <div className="flex justify-center sm:justify-start">
-          <div className="glass rounded-full p-1.5 inline-flex items-center gap-1">
-            {tabs.map(t => {
-              const active = tab === t.id;
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => setTab(t.id)}
-                  className={`relative flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                    active ? 'glass glass-interactive text-white' : 'text-slate-300 hover:text-white'
-                  }`}
-                >
-                  {t.icon}
-                  {t.label}
-                </button>
-              );
-            })}
-          </div>
+          <GlassEffect className="rounded-full">
+            <div className="flex items-center gap-1 p-1.5 font-normal">
+              {tabs.map(t => {
+                const active = tab === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setTab(t.id)}
+                    className={`relative flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                      active ? 'bg-white/25 text-white' : 'text-slate-200 hover:bg-white/15 hover:text-white'
+                    }`}
+                  >
+                    {t.icon}
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          </GlassEffect>
         </div>
 
         <MovieGrid

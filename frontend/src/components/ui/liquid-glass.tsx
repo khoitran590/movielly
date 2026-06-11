@@ -33,32 +33,37 @@ const GlassEffect: React.FC<GlassEffectProps> = ({
 
   const content = (
     <div
-      className={`relative flex font-semibold overflow-hidden text-black cursor-pointer transition-all duration-700 ${className}`}
+      className={`relative flex font-semibold text-black cursor-pointer transition-all duration-700 ${className}`}
       style={glassStyle}
     >
-      {/* Glass Layers */}
+      {/* Glass Layers — borderRadius:'inherit' because Tailwind 3 has no
+          rounded-inherit utility; overflow lives here (not on the wrapper)
+          so popovers inside the content can escape the bounds. */}
       <div
-        className="absolute inset-0 z-0 overflow-hidden rounded-inherit rounded-3xl"
+        className="absolute inset-0 z-0 overflow-hidden"
         style={{
-          backdropFilter: "blur(3px)",
+          borderRadius: "inherit",
+          backdropFilter: "blur(6px) saturate(150%)",
           filter: "url(#glass-distortion)",
           isolation: "isolate",
         }}
       />
+      {/* Thin tint so the page shows through — the dark theme does the rest */}
       <div
-        className="absolute inset-0 z-10 rounded-inherit"
-        style={{ background: "rgba(255, 255, 255, 0.25)" }}
+        className="absolute inset-0 z-10"
+        style={{ borderRadius: "inherit", background: "rgba(255, 255, 255, 0.10)" }}
       />
       <div
-        className="absolute inset-0 z-20 rounded-inherit rounded-3xl overflow-hidden"
+        className="absolute inset-0 z-20 overflow-hidden"
         style={{
+          borderRadius: "inherit",
           boxShadow:
-            "inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5), inset -1px -1px 1px 1px rgba(255, 255, 255, 0.5)",
+            "inset 2px 2px 1px 0 rgba(255, 255, 255, 0.28), inset -1px -1px 1px 1px rgba(255, 255, 255, 0.22)",
         }}
       />
 
       {/* Content */}
-      <div className="relative z-30">{children}</div>
+      <div className="relative z-30 w-full">{children}</div>
     </div>
   );
 
