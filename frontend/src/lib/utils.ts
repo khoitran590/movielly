@@ -1,0 +1,8 @@
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+// shadcn-style class combiner: clsx for conditionals, tailwind-merge so
+// later Tailwind classes override earlier conflicting ones.
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}

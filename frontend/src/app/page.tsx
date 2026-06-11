@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import { Search, TrendingUp, Film, Tv, Sparkles, SlidersHorizontal, Check, ChevronDown } from 'lucide-react';
 import { movies as movieApi } from '@/lib/api';
 import MovieGrid from '@/components/movie/MovieGrid';
 import Aurora from '@/components/ui/Aurora';
+import { LampContainer } from '@/components/ui/lamp';
 import type { Movie } from '@/types';
 
 type Tab = 'trending' | 'movies' | 'tv';
@@ -148,9 +150,15 @@ function HomeContent() {
   return (
     <>
       <Aurora />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-        {!query && (
-          <section className="relative text-center pt-10 sm:pt-20 pb-4 space-y-7">
+      {/* Lamp hero: light beam reveal over the headline + search (logged-out & no active search) */}
+      {!query && (
+        <LampContainer className="min-h-[52rem] [&>div:last-child]:-translate-y-64">
+          <motion.div
+            initial={{ opacity: 0.5, y: 100 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.8, ease: 'easeInOut' }}
+            className="flex w-full flex-col items-center space-y-6 text-center"
+          >
             <div className="glass glass-interactive inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium text-slate-200">
               <Sparkles className="w-3.5 h-3.5 text-brand-light" />
               Discover your next favorite
@@ -165,9 +173,13 @@ function HomeContent() {
               Search films &amp; shows, write reviews, track what you&apos;ve watched, and share your favorites.
             </p>
             {searchBar}
-          </section>
-        )}
+          </motion.div>
+        </LampContainer>
+      )}
 
+      {/* When the lamp hero is shown, overlap its empty lower region so the
+          grid starts right under the search bar. */}
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8 ${!query ? 'relative z-10 -mt-48' : ''}`}>
         {query && (
           <div className="space-y-5">
             {searchBar}
