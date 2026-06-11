@@ -19,9 +19,11 @@ export default function TrailerList({ trailers, onSelect, heading = 'Trailers' }
         <span className="ml-2 text-sm font-normal text-slate-400">({trailers.length})</span>
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {trailers.map(t => (
+        {trailers.map((t, i) => (
           <button
-            key={t.youtube_video_id}
+            // Two entries (e.g. franchise parts) can resolve to the same video,
+            // so the id alone is not a unique key.
+            key={`${t.youtube_video_id}-${i}`}
             onClick={() => onSelect(t.youtube_video_id)}
             className="group flex items-center gap-3 bg-surface-700 border border-surface-600 hover:border-brand/40 rounded-xl p-2 text-left transition-colors"
           >

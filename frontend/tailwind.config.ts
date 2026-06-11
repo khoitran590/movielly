@@ -31,6 +31,10 @@ const config: Config = {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
+      borderRadius: {
+        // Tailwind 4 ships rounded-4xl; liquid-glass.tsx uses it on hover
+        '4xl': '2rem',
+      },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',
         'slide-up': 'slideUp 0.3s ease-out',

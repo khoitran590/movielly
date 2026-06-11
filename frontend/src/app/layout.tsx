@@ -4,6 +4,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import Providers from '@/components/Providers';
 import { ToastProvider } from '@/components/ui/Toast';
 import Navbar from '@/components/layout/Navbar';
+import GlassDockNav from '@/components/layout/GlassDockNav';
 
 export const metadata: Metadata = {
   title: 'Movielly — Discover, Review & Share Movies',
@@ -26,11 +27,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <main className="min-h-[calc(100vh-4rem)]">
                 {children}
               </main>
-              <footer className="border-t border-surface-600 py-8 mt-16">
+              <footer className="border-t border-surface-600 py-8 mt-16 pb-24">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center text-sm text-slate-500">
                   <p>© {new Date().getFullYear()} Movielly. Movie data from TMDB.</p>
                 </div>
               </footer>
+              <GlassDockNav />
             </ToastProvider>
           </AuthProvider>
         </Providers>

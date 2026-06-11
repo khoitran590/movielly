@@ -41,6 +41,16 @@
   .line-clamp-3 { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 }
 
+/* Scrolling backdrop for the liquid-glass dock (components/ui/liquid-glass.tsx) */
+@keyframes moveBackground {
+  from {
+    background-position: 0% 0%;
+  }
+  to {
+    background-position: 0% -1000%;
+  }
+}
+
 /* Poster wall vertical marquee (auth pages). Content is duplicated, so -50% loops seamlessly. */
 @keyframes posterScrollUp {
   from { transform: translateY(0); }

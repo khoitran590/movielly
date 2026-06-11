@@ -85,26 +85,16 @@ exports.discover = async (req, res) => {
   }
 };
 
-// Hybrid trailer: KinoCheck first (curated official pick), TMDB as fallback.
+// Best playable trailer: ranked TMDB trailers + movie-trailer extras, each
+// validated against YouTube so dead or age-restricted videos never ship.
 exports.trailer = async (req, res) => {
   const { type, id } = req.params;
-
-  let trailer = null;
   try {
-    trailer = await trailerService.getKinocheckTrailer(type, id);
+    const trailer = await trailerService.getBestTrailer(type, id);
+    res.json(trailer || { youtube_video_id: null, title: null, source: null });
   } catch (err) {
-    console.warn(`KinoCheck lookup failed for ${type}/${id}: ${err.message}`);
+    handleTmdbError(err, res);
   }
-
-  if (!trailer) {
-    try {
-      trailer = await trailerService.getTmdbTrailer(type, id);
-    } catch (err) {
-      return handleTmdbError(err, res);
-    }
-  }
-
-  res.json(trailer || { youtube_video_id: null, title: null, source: null });
 };
 
 // Multiple trailers: per-film for movie franchises, per-season for TV shows.
