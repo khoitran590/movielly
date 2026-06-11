@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { createClient } from '@/lib/supabase';
+import { favorites as db } from '@/lib/db';
 import { useAuth } from '@/context/AuthContext';
 import type { FavoriteItem } from '@/types';
 
@@ -24,17 +24,11 @@ const FavoritesContext = createContext<FavoritesContextValue>({
 // Single source of truth for the user's favorites, shared across every MovieCard.
 export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const supabase = createClient();
   const [items, setItems] = useState<FavoriteItem[]>([]);
 
   const fetchItems = useCallback(async () => {
     if (!user) { setItems([]); return; }
-    const { data } = await supabase
-      .from('favorites')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('added_at', { ascending: false });
-    setItems(data || []);
+    setItems((await db.list(user.id)) as FavoriteItem[]);
   }, [user]);
 
   useEffect(() => { fetchItems(); }, [fetchItems]);
@@ -42,17 +36,13 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   const add = useCallback(async (item: Omit<FavoriteItem, 'id' | 'user_id' | 'added_at'>) => {
     if (!user) return;
     if (items.some(i => i.movie_id === item.movie_id)) return;
-    const { data } = await supabase
-      .from('favorites')
-      .insert({ ...item, user_id: user.id })
-      .select()
-      .single();
-    if (data) setItems(prev => [data, ...prev]);
+    const data = await db.add(user.id, item);
+    if (data) setItems(prev => [data as FavoriteItem, ...prev]);
   }, [user, items]);
 
   const remove = useCallback(async (movieId: number) => {
     if (!user) return;
-    await supabase.from('favorites').delete().eq('user_id', user.id).eq('movie_id', movieId);
+    await db.remove(user.id, movieId);
     setItems(prev => prev.filter(i => i.movie_id !== movieId));
   }, [user]);
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@/lib/supabase';
+import { reviews as reviewsDb } from '@/lib/db';
 import { useAuth } from '@/context/AuthContext';
 import type { Review } from '@/types';
 
@@ -12,29 +12,10 @@ export function useReviews(movieId?: number) {
   const { user } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [userReview, setUserReview] = useState<Review | null>(null);
-  const supabase = createClient();
 
   const fetchReviews = useCallback(async () => {
     if (!movieId) return;
-    const { data } = await supabase
-      .from('reviews')
-      .select('*')
-      .eq('movie_id', movieId)
-      .order('created_at', { ascending: false });
-
-    const rows = data || [];
-    // Fetch author profiles separately (no FK between reviews and profiles to embed on).
-    const userIds = [...new Set(rows.map(r => r.user_id))];
-    let profileMap: Record<string, { username: string | null; avatar_url: string | null; bio: string | null }> = {};
-    if (userIds.length) {
-      const { data: profs } = await supabase
-        .from('profiles')
-        .select('id, username, avatar_url, bio')
-        .in('id', userIds);
-      profileMap = Object.fromEntries((profs || []).map(p => [p.id, { username: p.username, avatar_url: p.avatar_url, bio: p.bio }]));
-    }
-    const withProfiles = rows.map(r => ({ ...r, profiles: profileMap[r.user_id] || null }));
-
+    const withProfiles = await reviewsDb.listForMovie(movieId);
     setReviews(withProfiles);
     if (user) {
       setUserReview(withProfiles.find(r => r.user_id === user.id) || null);
@@ -45,11 +26,7 @@ export function useReviews(movieId?: number) {
 
   const upsert = async (payload: { rating: number; content: string; movie_title: string; movie_poster: string | null; movie_type: 'movie' | 'tv' }) => {
     if (!user || !movieId) return;
-    const { error } = await supabase
-      .from('reviews')
-      .upsert({ ...payload, user_id: user.id, movie_id: movieId, updated_at: new Date().toISOString() }, { onConflict: 'user_id,movie_id' })
-      .select('*')
-      .single();
+    const { error } = await reviewsDb.upsert(user.id, movieId, payload);
     if (!error) {
       await fetchReviews();
     }
@@ -58,7 +35,7 @@ export function useReviews(movieId?: number) {
 
   const deleteReview = async () => {
     if (!user || !movieId) return;
-    await supabase.from('reviews').delete().eq('user_id', user.id).eq('movie_id', movieId);
+    await reviewsDb.remove(user.id, movieId);
     setUserReview(null);
     setReviews(prev => prev.filter(r => r.user_id !== user.id));
   };

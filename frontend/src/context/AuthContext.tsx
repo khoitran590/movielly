@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase';
+import { profiles } from '@/lib/db';
 
 interface AuthContextValue {
   user: User | null;
@@ -53,15 +54,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadProfile = useCallback(async (uid: string, metaName?: string | null) => {
     if (metaName !== undefined) setUsername(prev => prev ?? metaName ?? null);
-    const { data } = await supabase
-      .from('profiles')
-      .select('username, avatar_url, bio')
-      .eq('id', uid)
-      .maybeSingle();
+    const data = await profiles.get(uid);
     if (data) {
       setUsername(data.username);
       setAvatarUrl(data.avatar_url);
-      setBio(data.bio);
+      setBio(data.bio ?? null);
     }
   }, []);
 

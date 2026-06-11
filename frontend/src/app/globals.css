@@ -110,6 +110,17 @@
       inset 0 -12px 24px -16px rgba(0, 0, 0, 0.4);
   }
 
+  /* Darker tinted glass for controls that sit over busy imagery (search /
+     filter bar, dropdown menus) — keeps the glass look but guarantees the
+     text stays readable regardless of what's behind it. */
+  .glass-tinted {
+    background: linear-gradient(
+      135deg,
+      rgba(17, 28, 48, 0.82) 0%,
+      rgba(11, 18, 32, 0.74) 100%
+    );
+  }
+
   /* Subtle brand-tinted glass for emphasis surfaces */
   .glass-brand {
     background: linear-gradient(

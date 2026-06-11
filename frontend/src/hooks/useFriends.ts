@@ -1,23 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@/lib/supabase';
+import { friendships, profiles, sharedLists, type FriendshipRow } from '@/lib/db';
 import { useAuth } from '@/context/AuthContext';
 import type { FriendEntry, FriendProfile } from '@/types';
-
-interface FriendshipRow {
-  id: string;
-  requester_id: string;
-  addressee_id: string;
-  status: 'pending' | 'accepted';
-  created_at: string;
-}
 
 type ActionResult = { ok: boolean; message?: string };
 
 export function useFriends() {
   const { user } = useAuth();
-  const supabase = createClient();
   const [friends, setFriends] = useState<FriendEntry[]>([]);
   const [incoming, setIncoming] = useState<FriendEntry[]>([]);
   const [outgoing, setOutgoing] = useState<FriendEntry[]>([]);
@@ -27,13 +18,7 @@ export function useFriends() {
     if (!user) { setFriends([]); setIncoming([]); setOutgoing([]); setLoading(false); return; }
     setLoading(true);
 
-    const { data } = await supabase
-      .from('friendships')
-      .select('*')
-      .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
-      .order('created_at', { ascending: false });
-
-    const rows = (data || []) as FriendshipRow[];
+    const rows = await friendships.listFor(user.id);
     const otherId = (r: FriendshipRow) => (r.requester_id === user.id ? r.addressee_id : r.requester_id);
 
     // Profiles for everyone we have a relationship with
@@ -41,12 +26,12 @@ export function useFriends() {
     let profileMap: Record<string, FriendProfile> = {};
     let tokenMap: Record<string, string> = {};
     if (ids.length) {
-      const [{ data: profs }, { data: shared }] = await Promise.all([
-        supabase.from('profiles').select('id, username, avatar_url, bio').in('id', ids),
-        supabase.from('shared_lists').select('user_id, share_token').in('user_id', ids),
+      const [profs, shared] = await Promise.all([
+        profiles.getMany(ids),
+        sharedLists.getTokens(ids),
       ]);
-      profileMap = Object.fromEntries((profs || []).map(p => [p.id, { id: p.id, username: p.username, avatar_url: p.avatar_url, bio: p.bio }]));
-      tokenMap = Object.fromEntries((shared || []).map(s => [s.user_id, s.share_token]));
+      profileMap = Object.fromEntries(profs.map(p => [p.id, p]));
+      tokenMap = Object.fromEntries(shared.map(s => [s.user_id, s.share_token]));
     }
 
     const toEntry = (r: FriendshipRow): FriendEntry => {
@@ -72,56 +57,37 @@ export function useFriends() {
     const name = username.trim().replace(/^@/, '');
     if (!name) return { ok: false, message: 'Enter a username' };
 
-    const { data: target } = await supabase
-      .from('profiles')
-      .select('id, username')
-      .ilike('username', name)
-      .limit(1)
-      .maybeSingle();
-
+    const target = await profiles.findByUsername(name);
     if (!target) return { ok: false, message: `No user named "${name}"` };
     if (target.id === user.id) return { ok: false, message: "You can't add yourself" };
 
     // Existing relationship in either direction?
-    const { data: existingRows } = await supabase
-      .from('friendships')
-      .select('*')
-      .or(`and(requester_id.eq.${user.id},addressee_id.eq.${target.id}),and(requester_id.eq.${target.id},addressee_id.eq.${user.id})`);
-
-    const existing = (existingRows || [])[0] as FriendshipRow | undefined;
+    const existing = await friendships.between(user.id, target.id);
     if (existing) {
       if (existing.status === 'accepted') return { ok: false, message: `You're already friends with ${target.username}` };
       if (existing.requester_id === user.id) return { ok: false, message: 'Request already sent' };
       // Incoming pending from them -> accept it
-      const { error } = await supabase
-        .from('friendships')
-        .update({ status: 'accepted', updated_at: new Date().toISOString() })
-        .eq('id', existing.id);
+      const { error } = await friendships.accept(existing.id);
       if (error) return { ok: false, message: 'Could not accept request' };
       await fetchAll();
       return { ok: true, message: `You and ${target.username} are now friends` };
     }
 
-    const { error } = await supabase
-      .from('friendships')
-      .insert({ requester_id: user.id, addressee_id: target.id });
+    const { error } = await friendships.request(user.id, target.id);
     if (error) return { ok: false, message: 'Could not send request' };
     await fetchAll();
     return { ok: true, message: `Friend request sent to ${target.username}` };
   }, [user, fetchAll]);
 
   const accept = useCallback(async (friendshipId: string): Promise<ActionResult> => {
-    const { error } = await supabase
-      .from('friendships')
-      .update({ status: 'accepted', updated_at: new Date().toISOString() })
-      .eq('id', friendshipId);
+    const { error } = await friendships.accept(friendshipId);
     if (error) return { ok: false, message: 'Could not accept' };
     await fetchAll();
     return { ok: true };
   }, [fetchAll]);
 
   const remove = useCallback(async (friendshipId: string): Promise<ActionResult> => {
-    const { error } = await supabase.from('friendships').delete().eq('id', friendshipId);
+    const { error } = await friendships.remove(friendshipId);
     if (error) return { ok: false, message: 'Could not remove' };
     await fetchAll();
     return { ok: true };

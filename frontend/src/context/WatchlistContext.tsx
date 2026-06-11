@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { createClient } from '@/lib/supabase';
+import { watchlist as db } from '@/lib/db';
 import { useAuth } from '@/context/AuthContext';
 import type { WatchlistItem } from '@/types';
 
@@ -25,17 +25,11 @@ const WatchlistContext = createContext<WatchlistContextValue>({
 // so every MovieCard shares one fetch instead of querying individually.
 export function WatchlistProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const supabase = createClient();
   const [items, setItems] = useState<WatchlistItem[]>([]);
 
   const fetchItems = useCallback(async () => {
     if (!user) { setItems([]); return; }
-    const { data } = await supabase
-      .from('watchlist')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('added_at', { ascending: false });
-    setItems(data || []);
+    setItems((await db.list(user.id)) as WatchlistItem[]);
   }, [user]);
 
   useEffect(() => { fetchItems(); }, [fetchItems]);
@@ -44,17 +38,13 @@ export function WatchlistProvider({ children }: { children: React.ReactNode }) {
     if (!user) return;
     // optimistic guard against duplicates
     if (items.some(i => i.movie_id === item.movie_id)) return;
-    const { data } = await supabase
-      .from('watchlist')
-      .insert({ ...item, user_id: user.id })
-      .select()
-      .single();
-    if (data) setItems(prev => [data, ...prev]);
+    const data = await db.add(user.id, item);
+    if (data) setItems(prev => [data as WatchlistItem, ...prev]);
   }, [user, items]);
 
   const remove = useCallback(async (movieId: number) => {
     if (!user) return;
-    await supabase.from('watchlist').delete().eq('user_id', user.id).eq('movie_id', movieId);
+    await db.remove(user.id, movieId);
     setItems(prev => prev.filter(i => i.movie_id !== movieId));
   }, [user]);
 

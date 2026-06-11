@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Camera, Loader2, User as UserIcon } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
+import { profiles, avatars } from '@/lib/db';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
@@ -58,19 +59,16 @@ export default function SettingsPage() {
     try {
       let newAvatarUrl = avatarUrl;
       if (file) {
-        const path = `${user.id}/avatar`;
-        const { error: upErr } = await supabase.storage
-          .from('avatars')
-          .upload(path, file, { upsert: true, contentType: file.type });
-        if (upErr) { toast('Avatar upload failed', 'error'); setSaving(false); return; }
-        const { data } = supabase.storage.from('avatars').getPublicUrl(path);
-        newAvatarUrl = `${data.publicUrl}?v=${Date.now()}`; // cache-bust
+        const uploaded = await avatars.upload(user.id, file);
+        if (!uploaded) { toast('Avatar upload failed', 'error'); setSaving(false); return; }
+        newAvatarUrl = uploaded;
       }
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({ username: nextUsername, avatar_url: newAvatarUrl, bio: bioInput.trim() || null })
-        .eq('id', user.id);
+      const { error } = await profiles.update(user.id, {
+        username: nextUsername,
+        avatar_url: newAvatarUrl,
+        bio: bioInput.trim() || null,
+      });
       if (error) {
         toast(error.code === '23505' ? 'That username is already taken' : 'Could not save profile', 'error');
         setSaving(false);

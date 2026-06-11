@@ -95,7 +95,7 @@ function HomeContent() {
 
   const searchBar = (
     <form onSubmit={handleSearch} className="mx-auto w-full max-w-2xl">
-      <div className="glass glass-interactive flex items-center gap-1 rounded-full p-1.5 pl-5">
+      <div className="glass glass-tinted glass-interactive flex items-center gap-1 rounded-full p-1.5 pl-5">
         <Search className="relative z-[1] w-5 h-5 text-slate-300 shrink-0" />
         <input
           ref={inputRef}
@@ -121,7 +121,7 @@ function HomeContent() {
           </button>
 
           {genreOpen && (
-            <div className="absolute right-0 top-12 w-56 max-h-80 overflow-y-auto glass rounded-2xl p-1.5 shadow-2xl">
+            <div className="absolute right-0 top-12 w-56 max-h-80 overflow-y-auto glass glass-tinted rounded-2xl p-1.5 shadow-2xl">
               <button
                 type="button"
                 onClick={() => { setGenre(null); setGenreOpen(false); }}
@@ -166,9 +166,9 @@ function HomeContent() {
               Discover your next favorite
             </div>
             <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-white">
-              Your movie universe,<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-brand-light to-blue-500">
-                crystal clear.
+              Your cinema and TV shows universe<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-200 via-sky-300 to-blue-300 drop-shadow-[0_0_20px_rgba(186,230,253,0.35)]">
+                All in one place.
               </span>
             </h1>
             <p className="text-base sm:text-lg text-slate-300/90 max-w-xl mx-auto">

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { BookmarkCheck, Film, Tv, Lock, ChevronLeft, Heart } from 'lucide-react';
-import { createClient } from '@/lib/supabase';
+import { profiles, friendships, watchlist, sharedLists } from '@/lib/db';
 import { useAuth } from '@/context/AuthContext';
 import { getPosterUrl } from '@/lib/api';
 import Button from '@/components/ui/Button';
@@ -21,7 +21,6 @@ export default function FriendProfilePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const supabase = createClient();
   const [profile, setProfile] = useState<FriendProfile | null>(null);
   const [items, setItems] = useState<WatchlistItem[]>([]);
   const [shareToken, setShareToken] = useState<string | null>(null);
@@ -39,31 +38,22 @@ export default function FriendProfilePage() {
     let active = true;
     (async () => {
       setView('loading');
-      const { data: prof } = await supabase
-        .from('profiles')
-        .select('id, username, avatar_url, bio')
-        .eq('id', id)
-        .maybeSingle();
+      const prof = await profiles.get(id);
       if (!active) return;
       if (!prof) { setView('notfound'); return; }
       setProfile(prof);
 
-      const { data: friendship } = await supabase
-        .from('friendships')
-        .select('id')
-        .eq('status', 'accepted')
-        .or(`and(requester_id.eq.${user.id},addressee_id.eq.${id}),and(requester_id.eq.${id},addressee_id.eq.${user.id})`)
-        .maybeSingle();
+      const friendship = await friendships.acceptedBetween(user.id, id);
       if (!active) return;
       if (!friendship) { setView('not-friends'); return; }
 
-      const [{ data: wl }, { data: shared }] = await Promise.all([
-        supabase.from('watchlist').select('*').eq('user_id', id).order('added_at', { ascending: false }),
-        supabase.from('shared_lists').select('share_token').eq('user_id', id).maybeSingle(),
+      const [wl, token] = await Promise.all([
+        watchlist.list(id),
+        sharedLists.getToken(id),
       ]);
       if (!active) return;
-      setItems(wl || []);
-      setShareToken(shared?.share_token || null);
+      setItems(wl as WatchlistItem[]);
+      setShareToken(token);
       setView('ok');
     })();
     return () => { active = false; };
