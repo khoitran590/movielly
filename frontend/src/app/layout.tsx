@@ -4,7 +4,8 @@ import { AuthProvider } from '@/context/AuthContext';
 import Providers from '@/components/Providers';
 import { ToastProvider } from '@/components/ui/Toast';
 import Navbar from '@/components/layout/Navbar';
-import GlassDockNav from '@/components/layout/GlassDockNav';
+import SiteDockNav from '@/components/layout/SiteDockNav';
+import SiteBackground from '@/components/layout/SiteBackground';
 
 export const metadata: Metadata = {
   title: 'Movielly — Discover, Review & Share Movies',
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body>
+        <SiteBackground />
         <Providers>
           <AuthProvider>
             <ToastProvider>
@@ -32,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <p>© {new Date().getFullYear()} Movielly. Movie data from TMDB.</p>
                 </div>
               </footer>
-              <GlassDockNav />
+              <SiteDockNav />
             </ToastProvider>
           </AuthProvider>
         </Providers>

@@ -1,5 +1,18 @@
 import type { Config } from 'tailwindcss';
 
+// Exposes every Tailwind color as a global CSS var (e.g. --blue-500), which the
+// aurora-background component reads directly. Required by ui/aurora-background.tsx.
+const flattenColorPalette = require('tailwindcss/lib/util/flattenColorPalette').default;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function addVariablesForColors({ addBase, theme }: any) {
+  const allColors = flattenColorPalette(theme('colors'));
+  const newVars = Object.fromEntries(
+    Object.entries(allColors).map(([key, val]) => [`--${key}`, val as string])
+  );
+  addBase({ ':root': newVars });
+}
+
 const config: Config = {
   darkMode: 'class',
   content: [
@@ -27,6 +40,19 @@ const config: Config = {
           DEFAULT: '#f59e0b',
           light: '#fbbf24',
         },
+        // shadcn semantic tokens (driven by CSS vars in globals.css). These flip
+        // between light and dark, and back the tubelight-navbar + future UI.
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        border: 'hsl(var(--border))',
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -38,14 +64,19 @@ const config: Config = {
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',
         'slide-up': 'slideUp 0.3s ease-out',
+        aurora: 'aurora 60s linear infinite',
       },
       keyframes: {
         fadeIn: { from: { opacity: '0' }, to: { opacity: '1' } },
         slideUp: { from: { opacity: '0', transform: 'translateY(16px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+        aurora: {
+          from: { backgroundPosition: '50% 50%, 50% 50%' },
+          to: { backgroundPosition: '350% 50%, 350% 50%' },
+        },
       },
     },
   },
-  plugins: [],
+  plugins: [addVariablesForColors],
 };
 
 export default config;

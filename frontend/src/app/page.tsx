@@ -7,7 +7,6 @@ import { motion } from 'framer-motion';
 import { Search, TrendingUp, Film, Tv, Sparkles, SlidersHorizontal, Check, ChevronDown } from 'lucide-react';
 import { movies as movieApi } from '@/lib/api';
 import MovieGrid from '@/components/movie/MovieGrid';
-import Aurora from '@/components/ui/Aurora';
 import { LampContainer } from '@/components/ui/lamp';
 import { GlassEffect } from '@/components/ui/liquid-glass';
 import type { Movie } from '@/types';
@@ -156,7 +155,6 @@ function HomeContent() {
 
   return (
     <>
-      <Aurora />
       {/* Lamp hero: light beam reveal over the headline + search (logged-out & no active search) */}
       {!query && (
         <LampContainer className="min-h-[52rem] [&>div:last-child]:-translate-y-64">

@@ -3,8 +3,17 @@
 @tailwind utilities;
 
 @layer base {
+  /* Dark-only. Semantic tokens (used by the tubelight navbar) map to the
+     existing surface/brand palette. */
   :root {
     color-scheme: dark;
+    --background: 222 56% 6%;        /* surface-900 */
+    --foreground: 210 40% 98%;       /* slate-100 */
+    --primary: 217 91% 60%;          /* brand */
+    --primary-foreground: 0 0% 100%;
+    --muted: 218 48% 13%;            /* surface-700 */
+    --muted-foreground: 215 20% 65%; /* slate-400 */
+    --border: 219 43% 18%;           /* surface-600 */
   }
 
   * {
@@ -16,8 +25,14 @@
   }
 
   body {
-    @apply bg-surface-900 text-slate-100 antialiased;
+    /* Transparent so the fixed beams background (SiteBackground) shows through;
+       surface-900 stays as the html-level base color. */
+    @apply text-slate-100 antialiased;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  html {
+    @apply bg-surface-900;
   }
 
   ::-webkit-scrollbar {
