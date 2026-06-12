@@ -70,11 +70,12 @@ exports.genres = async (req, res) => {
 
 // Browse by genre (used by the home-page genre filter)
 exports.discover = async (req, res) => {
-  const { type = 'movie', with_genres, page = 1, sort_by = 'popularity.desc' } = req.query;
+  const { type = 'movie', with_genres, year, page = 1, sort_by = 'popularity.desc' } = req.query;
   const base = type === 'tv' ? 'tv' : 'movie';
   try {
     res.json(await tmdbService.discover(base, {
       with_genres,
+      ...(year && (base === 'tv' ? { first_air_date_year: year } : { primary_release_year: year })),
       page,
       sort_by,
       include_adult: false,

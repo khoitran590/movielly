@@ -12,6 +12,15 @@ import { GlassEffect } from '@/components/ui/liquid-glass';
 import type { Movie } from '@/types';
 
 type Tab = 'trending' | 'movies' | 'tv';
+type TypeFilter = 'all' | 'movie' | 'tv';
+
+const CURRENT_YEAR = new Date().getFullYear();
+const YEARS = Array.from({ length: CURRENT_YEAR - 1950 + 1 }, (_, i) => CURRENT_YEAR - i);
+
+const movieYear = (m: Movie) => {
+  const date = m.release_date || m.first_air_date;
+  return date ? Number(date.slice(0, 4)) : null;
+};
 
 function HomeContent() {
   const searchParams = useSearchParams();
@@ -20,11 +29,16 @@ function HomeContent() {
   const [input, setInput] = useState(query);
   const [tab, setTab] = useState<Tab>('trending');
   const [genre, setGenre] = useState<number | null>(null);
-  const [genreOpen, setGenreOpen] = useState(false);
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
+  const [year, setYear] = useState<number | null>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const genreRef = useRef<HTMLDivElement>(null);
+  const filterRef = useRef<HTMLDivElement>(null);
 
-  const mediaType: 'movie' | 'tv' = tab === 'tv' ? 'tv' : 'movie';
+  // The type filter (when set) wins over the tab when deciding which catalog
+  // to browse and which genre list to show.
+  const mediaType: 'movie' | 'tv' =
+    typeFilter !== 'all' ? typeFilter : tab === 'tv' ? 'tv' : 'movie';
 
   useEffect(() => { setInput(query); }, [query]);
 
@@ -37,10 +51,10 @@ function HomeContent() {
   });
   useEffect(() => { setGenre(null); }, [mediaType]);
 
-  // Close the genre menu on outside click
+  // Close the filter menu on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (genreRef.current && !genreRef.current.contains(e.target as Node)) setGenreOpen(false);
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) setFilterOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -49,17 +63,20 @@ function HomeContent() {
   // Browse results — React Query keys on the full filter state, so previously
   // visited tab/genre/search combinations come back instantly from cache.
   const { data: results = [], isPending: loading } = useQuery({
-    queryKey: ['browse', { query, tab, genre }],
+    queryKey: ['browse', { query, tab, genre, typeFilter, year }],
     queryFn: async (): Promise<Movie[]> => {
       if (query) {
-        const type = tab === 'movies' ? 'movie' : tab === 'tv' ? 'tv' : 'multi';
+        const type =
+          typeFilter !== 'all' ? typeFilter : tab === 'movies' ? 'movie' : tab === 'tv' ? 'tv' : 'multi';
         const data = await movieApi.search(query, 1, type);
         let res = data.results.filter(m => m.media_type !== 'person' && (m.poster_path || m.backdrop_path));
+        if (typeFilter !== 'all') res = res.filter(m => (m.media_type || typeFilter) === typeFilter);
         if (genre) res = res.filter(m => (m.genre_ids || []).includes(genre));
+        if (year) res = res.filter(m => movieYear(m) === year);
         return res;
       }
-      if (genre) {
-        const data = await movieApi.discover(mediaType, genre);
+      if (genre || year || typeFilter !== 'all') {
+        const data = await movieApi.discover(mediaType, genre, year);
         return data.results.map(m => ({ ...m, media_type: mediaType }));
       }
       if (tab === 'trending') {
@@ -84,6 +101,11 @@ function HomeContent() {
   ];
 
   const selectedGenreName = genre ? genres.find(g => g.id === genre)?.name : null;
+  const activeFilterCount = (typeFilter !== 'all' ? 1 : 0) + (genre ? 1 : 0) + (year ? 1 : 0);
+  const filterLabel =
+    [typeFilter !== 'all' ? (typeFilter === 'tv' ? 'TV' : 'Movies') : null, selectedGenreName, year]
+      .filter(Boolean)
+      .join(' · ') || 'Filters';
 
   const searchBar = (
     <form onSubmit={handleSearch} className="mx-auto w-full max-w-2xl">
@@ -99,43 +121,97 @@ function HomeContent() {
             className="flex-1 min-w-0 bg-transparent border-0 outline-none text-base text-white placeholder-slate-300 py-2.5"
           />
 
-          {/* Genre filter */}
-          <div ref={genreRef} className="relative shrink-0">
+          {/* Filters: type (movie/TV), genre, year */}
+          <div ref={filterRef} className="relative shrink-0">
             <button
               type="button"
-              onClick={() => setGenreOpen(v => !v)}
+              onClick={() => setFilterOpen(v => !v)}
               className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-sm transition-all duration-300 ${
-                genre ? 'bg-white/25 text-white' : 'text-slate-200 hover:bg-white/15 hover:text-white'
+                activeFilterCount ? 'bg-white/25 text-white' : 'text-slate-200 hover:bg-white/15 hover:text-white'
               }`}
             >
               <SlidersHorizontal className="w-4 h-4" />
-              <span className="hidden sm:inline max-w-[7rem] truncate">{selectedGenreName || 'Genre'}</span>
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${genreOpen ? 'rotate-180' : ''}`} />
+              <span className="hidden sm:inline max-w-[10rem] truncate">{filterLabel}</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${filterOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {genreOpen && (
-              <div className="absolute right-0 top-12 w-56 z-50">
+            {filterOpen && (
+              <div className="absolute right-0 top-12 w-72 z-50">
                 <GlassEffect className="rounded-2xl w-full">
-                  <div className="max-h-80 overflow-y-auto p-1.5">
-                    <button
-                      type="button"
-                      onClick={() => { setGenre(null); setGenreOpen(false); }}
-                      className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-sm text-white hover:bg-white/15 transition-colors"
-                    >
-                      All genres
-                      {!genre && <Check className="w-4 h-4 text-white" />}
-                    </button>
-                    {genres.map(g => (
-                      <button
-                        key={g.id}
-                        type="button"
-                        onClick={() => { setGenre(g.id); setGenreOpen(false); }}
-                        className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-sm text-white hover:bg-white/15 transition-colors text-left"
+                  <div className="max-h-96 overflow-y-auto p-3 space-y-3">
+                    {/* Type */}
+                    <div>
+                      <p className="px-1 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-300">Type</p>
+                      <div className="flex gap-1.5">
+                        {([
+                          { id: 'all', label: 'All' },
+                          { id: 'movie', label: 'Movies' },
+                          { id: 'tv', label: 'TV Shows' },
+                        ] as { id: TypeFilter; label: string }[]).map(t => (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => setTypeFilter(t.id)}
+                            className={`flex-1 rounded-full px-3 py-1.5 text-sm transition-colors ${
+                              typeFilter === t.id ? 'bg-white/25 text-white' : 'text-slate-200 hover:bg-white/15'
+                            }`}
+                          >
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Year */}
+                    <div>
+                      <p className="px-1 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-300">Year</p>
+                      <select
+                        value={year ?? ''}
+                        onChange={e => setYear(e.target.value ? Number(e.target.value) : null)}
+                        className="w-full rounded-xl bg-white/10 border border-white/15 px-3 py-2 text-sm text-white outline-none hover:bg-white/15 transition-colors [&>option]:bg-surface-800 [&>option]:text-white"
                       >
-                        {g.name}
-                        {genre === g.id && <Check className="w-4 h-4 text-white shrink-0" />}
+                        <option value="">Any year</option>
+                        {YEARS.map(y => (
+                          <option key={y} value={y}>{y}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Genre */}
+                    <div>
+                      <p className="px-1 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-300">Genre</p>
+                      <div className="max-h-44 overflow-y-auto pr-1">
+                        <button
+                          type="button"
+                          onClick={() => setGenre(null)}
+                          className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-sm text-white hover:bg-white/15 transition-colors"
+                        >
+                          All genres
+                          {!genre && <Check className="w-4 h-4 text-white" />}
+                        </button>
+                        {genres.map(g => (
+                          <button
+                            key={g.id}
+                            type="button"
+                            onClick={() => setGenre(g.id)}
+                            className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-sm text-white hover:bg-white/15 transition-colors text-left"
+                          >
+                            {g.name}
+                            {genre === g.id && <Check className="w-4 h-4 text-white shrink-0" />}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {activeFilterCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => { setTypeFilter('all'); setGenre(null); setYear(null); }}
+                        className="w-full rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-white/15 hover:text-white transition-colors"
+                      >
+                        Clear all filters
                       </button>
-                    ))}
+                    )}
                   </div>
                 </GlassEffect>
               </div>

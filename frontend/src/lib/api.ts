@@ -39,8 +39,10 @@ export const movies = {
   genres: (type: 'movie' | 'tv' = 'movie') =>
     api.get<{ genres: Genre[] }>('/api/movies/genres', { params: { type } }).then(r => r.data.genres),
 
-  discover: (type: 'movie' | 'tv', genreId: number, page = 1) =>
-    api.get<TmdbResponse<Movie>>('/api/movies/discover', { params: { type, with_genres: genreId, page } }).then(r => r.data),
+  discover: (type: 'movie' | 'tv', genreId?: number | null, year?: number | null, page = 1) =>
+    api.get<TmdbResponse<Movie>>('/api/movies/discover', {
+      params: { type, ...(genreId ? { with_genres: genreId } : {}), ...(year ? { year } : {}), page },
+    }).then(r => r.data),
 
   trailer: (type: 'movie' | 'tv', id: number) =>
     api.get<{ youtube_video_id: string | null; title: string | null; source: string | null }>(
