@@ -14,6 +14,8 @@
     --muted: 218 48% 13%;            /* surface-700 */
     --muted-foreground: 215 20% 65%; /* slate-400 */
     --border: 219 43% 18%;           /* surface-600 */
+    --popover: 220 50% 9%;           /* surface-800 */
+    --popover-foreground: 210 40% 98%; /* slate-100 */
   }
 
   * {
