@@ -3,19 +3,19 @@
 @tailwind utilities;
 
 @layer base {
-  /* Dark-only. Semantic tokens (used by the tubelight navbar) map to the
-     existing surface/brand palette. */
+  /* Dark-only. Semantic tokens (shadcn / tubelight navbar) map onto the
+     late-night-cinema palette in tailwind.config.ts. */
   :root {
     color-scheme: dark;
-    --background: 222 56% 6%;        /* surface-900 */
-    --foreground: 210 40% 98%;       /* slate-100 */
-    --primary: 217 91% 60%;          /* brand */
-    --primary-foreground: 0 0% 100%;
-    --muted: 218 48% 13%;            /* surface-700 */
-    --muted-foreground: 215 20% 65%; /* slate-400 */
-    --border: 219 43% 18%;           /* surface-600 */
-    --popover: 220 50% 9%;           /* surface-800 */
-    --popover-foreground: 210 40% 98%; /* slate-100 */
+    --background: 30 8% 4%;            /* ink */
+    --foreground: 36 33% 92%;          /* screen */
+    --primary: 38 71% 58%;             /* tungsten */
+    --primary-foreground: 30 8% 4%;    /* ink on gold */
+    --muted: 30 14% 11%;               /* velvet */
+    --muted-foreground: 32 7% 51%;     /* fog */
+    --border: 30 16% 15%;              /* rail */
+    --popover: 30 14% 11%;             /* velvet */
+    --popover-foreground: 36 33% 92%;  /* screen */
   }
 
   * {
@@ -24,17 +24,17 @@
 
   html {
     scroll-behavior: smooth;
+    background-color: #0B0A09;
   }
 
   body {
-    /* Transparent so the fixed beams background (SiteBackground) shows through;
-       surface-900 stays as the html-level base color. */
-    @apply text-slate-100 antialiased;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  }
-
-  html {
-    @apply bg-surface-900;
+    /* A barely-there tungsten bloom at the top of the page — the house lights
+       just before they drop. No canvas, no animation, no blur. */
+    background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(224, 168, 74, 0.06), transparent 60%),
+      #0B0A09;
+    @apply text-screen antialiased;
+    font-family: 'Manrope', system-ui, -apple-system, sans-serif;
   }
 
   ::-webkit-scrollbar {
@@ -42,13 +42,17 @@
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    @apply bg-surface-800;
+    @apply bg-velvet;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-surface-500 rounded-full;
+    @apply bg-rail rounded-full;
   }
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-surface-600;
+    @apply bg-seat;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
   }
 }
 
@@ -56,9 +60,13 @@
   .line-clamp-1 { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; }
   .line-clamp-2 { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
   .line-clamp-3 { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+
+  /* Poster rails: native horizontal scroll, no visible scrollbar. */
+  .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
 }
 
-/* Scrolling backdrop for the liquid-glass dock (components/ui/liquid-glass.tsx) */
+/* Scrolling backdrop for the liquid-glass demo dock (components/ui/liquid-glass.tsx) */
 @keyframes moveBackground {
   from {
     background-position: 0% 0%;
@@ -82,102 +90,80 @@
   [style*="posterScroll"] { animation: none !important; }
 }
 
-/* ──────────────────────────────────────────────────────────────
-   Liquid Glass — translucent material inspired by Apple's design.
-   Layers: backdrop blur+saturation, adaptive tint, edge lensing,
-   specular top highlight, soft drop shadow for "float".
-   ────────────────────────────────────────────────────────────── */
-/* Defined in the components layer (not utilities) so Tailwind utilities like
-   `absolute`/`fixed` can override the default position without !important. */
 @layer components {
+  /* Glass is allowed on nothing by default. Use it only where a surface sits
+     over imagery (the mobile dock, a control over a still): an ink tint, not a
+     white sheen, and no brand-colored inner glow. */
   .glass {
     position: relative;
-    background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.10) 0%,
-      rgba(255, 255, 255, 0.04) 40%,
-      rgba(255, 255, 255, 0.02) 100%
-    );
-    /* Lighter blur = much cheaper compositing on low-end GPUs */
-    backdrop-filter: blur(14px) saturate(140%);
-    -webkit-backdrop-filter: blur(14px) saturate(140%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow:
-      0 10px 40px -8px rgba(0, 0, 0, 0.55),          /* float */
-      0 2px 8px -2px rgba(0, 0, 0, 0.35),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.28),      /* top specular */
-      inset 0 0 0 1px rgba(255, 255, 255, 0.04),      /* inner edge */
-      inset 0 -12px 24px -16px rgba(0, 0, 0, 0.4);    /* bottom shade */
+    background: rgba(11, 10, 9, 0.62);
+    backdrop-filter: blur(14px) saturate(120%);
+    -webkit-backdrop-filter: blur(14px) saturate(120%);
+    border: 1px solid rgba(243, 237, 227, 0.08);
   }
 
-  /* Specular sheen + edge lensing highlight (no blend-mode — cheaper to paint) */
-  .glass::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background:
-      radial-gradient(120% 80% at 50% -10%, rgba(255, 255, 255, 0.18), transparent 55%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 30%);
-    opacity: 0.9;
-  }
-
-  /* Interactive glass: brighter lensing on hover */
   .glass-interactive {
-    transition: box-shadow 0.35s ease, border-color 0.35s ease, transform 0.35s ease, background 0.35s ease;
+    transition: border-color 0.2s ease, background 0.2s ease;
   }
   .glass-interactive:hover {
-    border-color: rgba(255, 255, 255, 0.22);
-    box-shadow:
-      0 16px 50px -10px rgba(0, 0, 0, 0.6),
-      0 0 0 1px rgba(255, 255, 255, 0.06),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.38),
-      inset 0 0 24px -6px rgba(59, 130, 246, 0.35),   /* brand-tinted inner glow */
-      inset 0 -12px 24px -16px rgba(0, 0, 0, 0.4);
+    border-color: rgba(243, 237, 227, 0.16);
   }
 
-  /* Darker tinted glass for controls that sit over busy imagery (search /
-     filter bar, dropdown menus) — keeps the glass look but guarantees the
-     text stays readable regardless of what's behind it. */
+  /* Slightly more opaque, for controls that must stay readable over a backdrop. */
   .glass-tinted {
-    background: linear-gradient(
-      135deg,
-      rgba(17, 28, 48, 0.82) 0%,
-      rgba(11, 18, 32, 0.74) 100%
-    );
+    background: rgba(11, 10, 9, 0.78);
   }
 
-  /* Subtle brand-tinted glass for emphasis surfaces */
-  .glass-brand {
-    background: linear-gradient(
-      135deg,
-      rgba(96, 165, 250, 0.16) 0%,
-      rgba(59, 130, 246, 0.07) 45%,
-      rgba(255, 255, 255, 0.03) 100%
-    );
+  /* ── Poster card behaviour ──────────────────────────────────────────
+     Hover belongs to fine pointers only: on a phone there is no hover, so
+     the actions are simply always visible and the art never scales. */
+  .poster-zoom {
+    transition: transform 200ms ease-out;
+  }
+  .rail-caption,
+  .poster-actions {
+    transition: opacity 150ms ease-out;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .group:hover .poster-zoom { transform: scale(1.04); }
+    .poster-actions { opacity: 0; }
+    .group:hover .poster-actions,
+    .poster-actions:focus-within { opacity: 1; }
+  }
+
+  /* Rail cards drop the caption under the art on desktop (Netflix density)
+     and reveal the title over the poster on hover instead. */
+  @media (min-width: 768px) {
+    .rail-caption { opacity: 0; }
+    .group:hover .rail-caption,
+    .group:focus-visible .rail-caption { opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .poster-zoom { transition: none; }
+    .group:hover .poster-zoom { transform: none; }
   }
 }
 
-/* Ambient aurora — colorful, slowly drifting light behind the glass
-   so the material has something to refract and adapt to. */
+/* Ambient aurora — only the /aurora + /liquid-glass sandbox routes use this.
+   Nothing in the product mounts it. */
 .aurora {
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
-  contain: layout paint;  /* isolate paint/layout from the rest of the page */
+  contain: layout paint;
 }
 .aurora__blob {
   position: absolute;
   border-radius: 9999px;
-  filter: blur(64px);     /* smaller blur radius is significantly cheaper */
+  filter: blur(64px);
   opacity: 0.5;
   will-change: transform;
 }
 
-/* Drop the aurora animation on coarse pointers / small screens (phones, low-end) */
 @media (max-width: 640px), (pointer: coarse) {
   .aurora__blob { animation: none !important; }
 }

@@ -20,6 +20,25 @@ export const getYear = (movie: Movie) => {
   return date ? new Date(date).getFullYear() : null;
 };
 
+// Saved rows (watchlist, favorites, shared lists) store just enough to draw a
+// poster. Lift one into a Movie stub so collections can reuse MovieCard.
+export const savedToMovie = (item: {
+  movie_id: number;
+  movie_title: string;
+  movie_poster: string | null;
+  movie_type: 'movie' | 'tv';
+}): Movie => ({
+  id: item.movie_id,
+  title: item.movie_type === 'tv' ? undefined : item.movie_title,
+  name: item.movie_type === 'tv' ? item.movie_title : undefined,
+  overview: '',
+  poster_path: item.movie_poster,
+  backdrop_path: null,
+  vote_average: 0,
+  vote_count: 0,
+  media_type: item.movie_type,
+});
+
 export const movies = {
   search: (query: string, page = 1, type = 'multi') =>
     api.get<TmdbResponse<Movie>>('/api/movies/search', { params: { query, page, type } }).then(r => r.data),

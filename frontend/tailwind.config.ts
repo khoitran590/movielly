@@ -23,25 +23,24 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Cool blue-navy surfaces so the blue brand blends instead of contrasting
-        surface: {
-          900: '#070c16',
-          800: '#0b1220',
-          700: '#111c30',
-          600: '#1a2842',
-          500: '#243a58',
-        },
-        brand: {
-          DEFAULT: '#3b82f6',
-          light: '#60a5fa',
-          dark: '#1d4ed8',
-        },
-        gold: {
-          DEFAULT: '#f59e0b',
-          light: '#fbbf24',
-        },
-        // shadcn semantic tokens (driven by CSS vars in globals.css). These flip
-        // between light and dark, and back the tubelight-navbar + future UI.
+        // Late-night cinema: warm black room, gold for judgment, red for love.
+        // Posters carry the color; the UI does not.
+        ink: '#0B0A09',      // page background
+        velvet: '#161310',   // raised surface (cards, dropdowns, inputs)
+        seat: '#211C18',     // hover / inset well
+        rail: '#2C261F',     // borders, hairlines
+        fog: '#8A8278',      // secondary text, captions, placeholders
+        screen: '#F3EDE3',   // primary text
+        tungsten: { DEFAULT: '#E0A84A', dim: '#B07E2C' },
+        ticket: { DEFAULT: '#C23B3B', dim: '#8E2A2A' },
+
+        // Migration aliases — every legacy `surface-*` / `brand` / `gold` class
+        // now resolves to the new palette. Prefer the named tokens above.
+        surface: { 900: '#0B0A09', 800: '#161310', 700: '#211C18', 600: '#2C261F', 500: '#3A3229' },
+        brand: { DEFAULT: '#E0A84A', light: '#E0A84A', dark: '#B07E2C' },
+        gold: { DEFAULT: '#E0A84A', light: '#E8C27A' },
+
+        // shadcn semantic tokens (driven by CSS vars in globals.css).
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         border: 'hsl(var(--border))',
@@ -59,11 +58,28 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['"Bodoni Moda"', 'Georgia', 'serif'],
+        sans: ['Manrope', 'system-ui', 'sans-serif'],
+        mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
+      },
+      // The whole type scale. Do not invent sizes outside this list.
+      fontSize: {
+        'display-xl': ['64px', { lineHeight: '1.05', letterSpacing: '-0.03em' }],
+        'display-lg': ['40px', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
+        'display-md': ['28px', { lineHeight: '1.15', letterSpacing: '-0.015em' }],
+        title: ['18px', { lineHeight: '1.3', letterSpacing: '-0.01em' }],
+        body: ['15px', { lineHeight: '1.6', letterSpacing: '0' }],
+        ui: ['13px', { lineHeight: '1.4', letterSpacing: '0.01em' }],
+        meta: ['12px', { lineHeight: '1.4', letterSpacing: '0.04em' }],
       },
       borderRadius: {
-        // Tailwind 4 ships rounded-4xl; liquid-glass.tsx uses it on hover
+        poster: '6px',  // posters and thumbnails — almost sharp, like a print
+        panel: '16px',  // modal, dropdown, form card
         '4xl': '2rem',
+      },
+      boxShadow: {
+        // Elevation exists on hovered posters and modals only.
+        poster: '0 24px 48px -24px rgba(0,0,0,0.65)',
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',

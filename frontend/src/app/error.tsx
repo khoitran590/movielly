@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import * as Sentry from '@sentry/nextjs';
-import { TriangleAlert } from 'lucide-react';
+import Button from '@/components/ui/Button';
 
 // Route-level error boundary: catches render/data errors inside any page,
 // reports them to Sentry, and offers a retry instead of a white screen.
@@ -12,24 +12,15 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
   }, [error]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center gap-4 px-4">
-      <TriangleAlert className="w-14 h-14 text-amber-400/80" />
-      <h2 className="text-xl font-semibold text-slate-100">Something went wrong</h2>
-      <p className="text-sm text-slate-400 max-w-md">
-        An unexpected error occurred. It has been reported — try again, or head back home.
+    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-5 text-center">
+      <h2 className="font-display text-display-md text-screen">The reel snapped.</h2>
+      <p className="max-w-md text-body text-fog">
+        Something broke on our end. It has been reported.
       </p>
-      <div className="flex gap-3 mt-2">
-        <button
-          onClick={reset}
-          className="rounded-full bg-brand hover:bg-brand-light text-white font-medium px-5 py-2.5 text-sm transition-colors"
-        >
-          Try again
-        </button>
-        <a
-          href="/"
-          className="rounded-full bg-surface-700 hover:bg-surface-600 border border-surface-500 text-slate-200 font-medium px-5 py-2.5 text-sm transition-colors"
-        >
-          Go home
+      <div className="mt-2 flex gap-3">
+        <Button variant="primary" onClick={reset}>Try again</Button>
+        <a href="/">
+          <Button variant="secondary">Go home</Button>
         </a>
       </div>
     </div>

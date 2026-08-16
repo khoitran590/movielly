@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Tv2, ExternalLink } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { movies as movieApi, getProviderLogo } from '@/lib/api';
 import type { WatchProvider } from '@/types';
 
@@ -16,17 +16,15 @@ const GROUPS: { key: 'stream' | 'rent' | 'buy'; label: string }[] = [
   { key: 'buy', label: 'Buy' },
 ];
 
-// "Where to watch" — JustWatch availability via TMDB, rendered as a minimal
-// glass card. Links out to the licensed services; never streams content.
+// JustWatch availability via TMDB. Links out to the licensed services; never
+// streams content.
 export default function WhereToWatch({ type, id }: WhereToWatchProps) {
   const { data, isPending } = useQuery({
     queryKey: ['providers', type, id],
     queryFn: () => movieApi.providers(type, id),
   });
 
-  if (isPending) {
-    return <div className="bg-surface-700 border border-surface-600 rounded-xl h-28 animate-pulse" />;
-  }
+  if (isPending) return <div className="h-28 animate-pulse rounded-panel bg-velvet" />;
 
   const hasAny = data && (data.stream.length || data.rent.length || data.buy.length);
   if (!data || !hasAny) return null;
@@ -36,21 +34,28 @@ export default function WhereToWatch({ type, id }: WhereToWatchProps) {
       {list.map(p => {
         const logo = getProviderLogo(p.logo_path);
         const inner = logo ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={logo}
             alt={p.provider_name}
             title={p.provider_name}
-            className="w-10 h-10 rounded-xl object-cover border border-surface-500"
+            className="h-10 w-10 rounded-poster object-cover"
             loading="lazy"
           />
         ) : (
-          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-surface-600 text-[10px] text-slate-200 text-center px-1">
+          <span className="flex h-10 w-10 items-center justify-center rounded-poster bg-seat px-1 text-center text-[10px] text-screen">
             {p.provider_name}
           </span>
         );
         return data.link ? (
-          <a key={p.provider_id} href={data.link} target="_blank" rel="noopener noreferrer"
-             className="transition-transform hover:scale-110" aria-label={`Watch on ${p.provider_name}`}>
+          <a
+            key={p.provider_id}
+            href={data.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Watch on ${p.provider_name}`}
+            className="rounded-poster transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tungsten"
+          >
             {inner}
           </a>
         ) : (
@@ -61,16 +66,19 @@ export default function WhereToWatch({ type, id }: WhereToWatchProps) {
   );
 
   return (
-    <section className="bg-surface-700 border border-surface-600 rounded-xl p-4 space-y-4">
+    <section className="space-y-4 rounded-panel bg-velvet p-4">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-slate-100">
-          <Tv2 className="w-4 h-4 text-brand-light" />
-          Where to Watch
-          <span className="text-xs font-normal text-slate-400">· {data.region}</span>
+        <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-fog">
+          Where to watch
+          <span className="ml-2 font-mono normal-case tracking-normal">{data.region}</span>
         </h2>
         {data.link && (
-          <a href={data.link} target="_blank" rel="noopener noreferrer"
-             className="flex items-center gap-1 text-xs text-brand-light hover:underline shrink-0">
+          <a
+            href={data.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex shrink-0 items-center gap-1 rounded-full text-ui text-fog transition-colors hover:text-screen focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tungsten"
+          >
             More <ExternalLink className="w-3 h-3" />
           </a>
         )}
@@ -82,14 +90,14 @@ export default function WhereToWatch({ type, id }: WhereToWatchProps) {
           if (!list.length) return null;
           return (
             <div key={key} className="flex items-center gap-4">
-              <span className="w-14 shrink-0 text-xs font-medium uppercase tracking-wide text-slate-400">{label}</span>
+              <span className="w-12 shrink-0 text-[11px] font-medium uppercase tracking-wide text-fog">{label}</span>
               <Logos list={list} />
             </div>
           );
         })}
       </div>
 
-      <p className="text-[10px] text-slate-500 pt-1">Streaming data powered by JustWatch</p>
+      <p className="pt-1 text-[10px] text-fog">Streaming data from JustWatch</p>
     </section>
   );
 }

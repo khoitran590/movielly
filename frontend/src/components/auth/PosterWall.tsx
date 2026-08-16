@@ -42,7 +42,7 @@ export default function PosterWall() {
                 alt=""
                 aria-hidden="true"
                 loading="lazy"
-                className="w-full mb-3 rounded-xl object-cover aspect-[2/3] border border-surface-600/50 shadow-lg"
+                className="mb-3 aspect-[2/3] w-full rounded-poster object-cover"
               />
             ))}
           </div>

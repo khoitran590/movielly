@@ -1,31 +1,58 @@
-import PosterWall from './PosterWall';
+'use client';
 
-// Two-pane auth layout: form on the left, scrolling movie posters on the right.
+import { useEffect, useState } from 'react';
+import PosterWall from './PosterWall';
+import Wordmark from '@/components/layout/Wordmark';
+import { movies, getPosterUrl } from '@/lib/api';
+
+// Two-pane auth: form on the left, the scrolling poster wall on the right.
+// On a phone there is no wall, so a single blurred still keeps the screen from
+// being a blank ink slab.
 export default function AuthShell({ children }: { children: React.ReactNode }) {
+  const [backdrop, setBackdrop] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    movies.popular('movie', 1)
+      .then(r => {
+        const url = getPosterUrl(r.results[0]?.poster_path, 'w780');
+        if (active) setBackdrop(url);
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+
   return (
-    <div className="grid lg:grid-cols-2 min-h-[calc(100vh-4rem)]">
+    <div className="grid min-h-screen lg:grid-cols-2">
       {/* Left — form */}
-      <div className="flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md animate-slide-up">{children}</div>
+      <div className="relative flex items-center justify-center overflow-hidden px-5 py-12">
+        {backdrop && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={backdrop}
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-20 blur-2xl lg:hidden"
+          />
+        )}
+        <div className="relative w-full max-w-md animate-slide-up space-y-8">
+          <Wordmark />
+          {children}
+        </div>
       </div>
 
       {/* Right — poster wall (desktop only) */}
-      <div className="relative hidden lg:block overflow-hidden border-l border-surface-600 bg-surface-900">
+      <div className="relative hidden overflow-hidden border-l border-rail bg-ink lg:block">
         <PosterWall />
 
-        {/* Fades: darken left edge for seam, vignette top/bottom */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-l from-transparent via-surface-900/40 to-surface-900" />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-surface-900/90 via-transparent to-surface-900/70" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-l from-transparent via-ink/40 to-ink" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink via-transparent to-ink/70" />
 
-        {/* Tagline */}
         <div className="pointer-events-none absolute bottom-12 left-12 right-12 z-10">
-          <h2 className="text-3xl font-bold leading-tight text-white">
-            Thousands of films.<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand to-brand-light">One watchlist.</span>
+          <h2 className="font-display text-display-md leading-tight text-screen">
+            What you watch is who you are.
           </h2>
-          <p className="mt-3 text-slate-300">
-            Discover movies & shows, rate them, write reviews, and share your favorites with friends.
-          </p>
+          <p className="mt-3 text-body text-fog">Rate it. Keep it. Pass it to a friend.</p>
         </div>
       </div>
     </div>

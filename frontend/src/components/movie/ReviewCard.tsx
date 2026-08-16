@@ -21,40 +21,49 @@ interface ReviewCardProps {
   onDelete?: () => void;
 }
 
+const focusRing =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tungsten focus-visible:ring-offset-2 focus-visible:ring-offset-velvet';
+
 export default function ReviewCard({ review, isOwn, onEdit, onDelete }: ReviewCardProps) {
   const username = review.profiles?.username || 'Anonymous';
   const initial = username[0]?.toUpperCase() || '?';
 
   return (
-    <div className="bg-surface-700 border border-surface-600 rounded-xl p-4 space-y-3">
+    <article className="space-y-3 rounded-panel border border-rail bg-velvet p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-brand/20 border border-brand/30 flex items-center justify-center shrink-0">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-seat">
             {review.profiles?.avatar_url ? (
-              <img src={review.profiles.avatar_url} alt={username} className="w-full h-full rounded-full object-cover" />
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={review.profiles.avatar_url} alt="" className="h-full w-full object-cover" />
             ) : (
-              <span className="text-sm font-semibold text-brand-light">{initial}</span>
+              <span className="text-ui font-medium text-fog">{initial}</span>
             )}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-medium text-slate-200">{username}</p>
-            <p className="text-xs text-slate-500">{timeAgo(review.created_at)}</p>
-            {review.profiles?.bio && (
-              <p className="text-xs text-slate-500/80 italic line-clamp-1 mt-0.5">{review.profiles.bio}</p>
-            )}
+            <p className="text-ui font-medium text-screen">{username}</p>
+            <p className="font-mono text-[11px] text-fog">{timeAgo(review.created_at)}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <StarRating value={review.rating} readonly size="sm" max={10} />
           {isOwn && (
-            <div className="flex items-center gap-1 ml-2">
+            <div className="ml-2 flex items-center gap-1">
               {onEdit && (
-                <button onClick={onEdit} className="p-1.5 rounded-lg hover:bg-surface-600 text-slate-400 hover:text-brand-light transition-colors">
+                <button
+                  onClick={onEdit}
+                  aria-label="Edit your review"
+                  className={`rounded-full p-1.5 text-fog transition-colors hover:bg-seat hover:text-screen ${focusRing}`}
+                >
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
               )}
               {onDelete && (
-                <button onClick={onDelete} className="p-1.5 rounded-lg hover:bg-surface-600 text-slate-400 hover:text-red-400 transition-colors">
+                <button
+                  onClick={onDelete}
+                  aria-label="Delete your review"
+                  className={`rounded-full p-1.5 text-fog transition-colors hover:bg-ticket/10 hover:text-ticket ${focusRing}`}
+                >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               )}
@@ -62,9 +71,7 @@ export default function ReviewCard({ review, isOwn, onEdit, onDelete }: ReviewCa
           )}
         </div>
       </div>
-      {review.content && (
-        <p className="text-sm text-slate-300 leading-relaxed">{review.content}</p>
-      )}
-    </div>
+      {review.content && <p className="text-body text-screen">{review.content}</p>}
+    </article>
   );
 }

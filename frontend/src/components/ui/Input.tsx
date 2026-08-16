@@ -12,24 +12,24 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
-          <label htmlFor={inputId} className="text-sm font-medium text-slate-300">
+          <label htmlFor={inputId} className="text-ui font-medium text-fog">
             {label}
           </label>
         )}
         <div className="relative">
           {icon && (
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fog">
               {icon}
             </span>
           )}
           <input
             ref={ref}
             id={inputId}
-            className={`w-full bg-surface-700 border ${error ? 'border-red-500/60' : 'border-surface-500'} text-slate-100 placeholder-slate-500 rounded-xl py-2.5 ${icon ? 'pl-10' : 'pl-4'} pr-4 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition-all duration-200 ${className}`}
+            className={`w-full rounded-xl border bg-seat ${error ? 'border-ticket' : 'border-rail'} py-2.5 ${icon ? 'pl-10' : 'pl-4'} pr-4 text-ui text-screen placeholder-fog outline-none transition-colors duration-200 focus:border-tungsten focus:ring-2 focus:ring-tungsten/25 ${className}`}
             {...props}
           />
         </div>
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {error && <p className="text-meta text-ticket">{error}</p>}
       </div>
     );
   }

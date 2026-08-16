@@ -8,10 +8,14 @@ import { profiles, avatars } from '@/lib/db';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
+import { PageSpinner } from '@/components/ui/Spinner';
 
 const MAX_BIO = 280;
 const MAX_AVATAR_BYTES = 3 * 1024 * 1024; // 3 MB
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
+
+const focusRing =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tungsten focus-visible:ring-offset-2 focus-visible:ring-offset-velvet';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -86,42 +90,44 @@ export default function SettingsPage() {
     }
   };
 
-  if (authLoading || !user) {
-    return <div className="flex justify-center items-center min-h-[60vh]"><div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin" /></div>;
-  }
+  if (authLoading || !user) return <PageSpinner />;
 
   const shownAvatar = preview || avatarUrl;
   const dirty = !!file || bioInput.trim() !== (bio || '').trim() || usernameInput.trim() !== (username || '');
 
   return (
-    <div className="max-w-xl mx-auto px-4 sm:px-6 py-8 space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-white">Edit Profile</h1>
+    <div className="mx-auto max-w-xl animate-fade-in space-y-6 px-5 py-8 sm:px-8">
+      <h1 className="font-display text-display-md text-screen">Edit profile</h1>
 
-      <div className="glass rounded-2xl p-6 space-y-6">
+      <div className="space-y-6 rounded-panel border border-rail bg-velvet p-6">
         {/* Avatar */}
         <div className="flex items-center gap-5">
           <div className="relative shrink-0">
-            <div className="w-24 h-24 rounded-full bg-brand/20 border border-brand/30 overflow-hidden flex items-center justify-center">
+            <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-seat">
               {shownAvatar ? (
-                <img src={shownAvatar} alt="Avatar" className="w-full h-full object-cover" />
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={shownAvatar} alt="" className="h-full w-full object-cover" />
               ) : (
-                <UserIcon className="w-10 h-10 text-brand-light" />
+                <UserIcon className="w-10 h-10 text-fog" />
               )}
             </div>
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-brand hover:bg-brand-light text-white flex items-center justify-center shadow-lg transition-colors"
-              title="Change picture"
+              aria-label="Change profile picture"
+              className={`absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-tungsten text-ink transition-colors hover:bg-tungsten-dim ${focusRing}`}
             >
               <Camera className="w-4 h-4" />
             </button>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pickFile} />
           </div>
           <div className="min-w-0">
-            <p className="text-lg font-semibold text-slate-100 truncate">@{username || '…'}</p>
-            <p className="text-xs text-slate-500 truncate">{user.email}</p>
-            <button onClick={() => fileRef.current?.click()} className="mt-2 text-sm text-brand-light hover:underline">
+            <p className="truncate text-title font-semibold text-screen">@{username || '…'}</p>
+            <p className="truncate font-mono text-meta text-fog">{user.email}</p>
+            <button
+              onClick={() => fileRef.current?.click()}
+              className={`mt-2 rounded-full text-ui text-tungsten hover:underline ${focusRing}`}
+            >
               Change profile picture
             </button>
           </div>
@@ -129,26 +135,26 @@ export default function SettingsPage() {
 
         {/* Username */}
         <div>
-          <label htmlFor="username" className="text-sm font-medium text-slate-300 block mb-2">Username</label>
-          <div className="flex items-center bg-surface-700 border border-surface-500 rounded-xl focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20 transition-all">
-            <span className="pl-3 text-slate-400 text-sm">@</span>
+          <label htmlFor="username" className="mb-2 block text-ui font-medium text-fog">Username</label>
+          <div className="flex items-center rounded-xl border border-rail bg-seat transition-colors focus-within:border-tungsten focus-within:ring-2 focus-within:ring-tungsten/25">
+            <span className="pl-3 text-ui text-fog">@</span>
             <input
               id="username"
               value={usernameInput}
               onChange={e => setUsernameInput(e.target.value.replace(/\s/g, ''))}
               maxLength={20}
               placeholder="username"
-              className="flex-1 bg-transparent py-2.5 pl-1 pr-3 text-sm text-slate-100 placeholder-slate-500 outline-none"
+              className="flex-1 bg-transparent py-2.5 pl-1 pr-3 text-ui text-screen placeholder-fog outline-none"
             />
           </div>
-          <p className="text-xs text-slate-500 mt-1.5">3–20 characters: letters, numbers, or underscores. This is how friends find you.</p>
+          <p className="mt-1.5 text-meta text-fog">3–20 characters: letters, numbers, or underscores. This is how friends find you.</p>
         </div>
 
         {/* Bio */}
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <label htmlFor="bio" className="text-sm font-medium text-slate-300">Bio</label>
-            <span className={`text-xs ${bioInput.length > MAX_BIO ? 'text-red-400' : 'text-slate-500'}`}>
+          <div className="mb-2 flex items-center justify-between">
+            <label htmlFor="bio" className="text-ui font-medium text-fog">Bio</label>
+            <span className={`font-mono text-meta ${bioInput.length > MAX_BIO ? 'text-ticket' : 'text-fog'}`}>
               {bioInput.length}/{MAX_BIO}
             </span>
           </div>
@@ -159,14 +165,14 @@ export default function SettingsPage() {
             maxLength={MAX_BIO}
             rows={3}
             placeholder="Tell your friends a little about your taste in movies…"
-            className="w-full bg-surface-700 border border-surface-500 rounded-xl p-3 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 resize-none transition-all"
+            className="w-full resize-none rounded-xl border border-rail bg-seat p-3 text-body text-screen placeholder-fog outline-none transition-colors focus:border-tungsten focus:ring-2 focus:ring-tungsten/25"
           />
-          <p className="text-xs text-slate-500 mt-1.5">Your friends can see this on your profile.</p>
+          <p className="mt-1.5 text-meta text-fog">Your friends can see this on your profile.</p>
         </div>
 
         <div className="flex justify-end">
           <Button onClick={handleSave} loading={saving} disabled={!dirty}>
-            {saving ? 'Saving…' : 'Save Changes'}
+            {saving ? 'Saving…' : 'Save changes'}
           </Button>
         </div>
       </div>

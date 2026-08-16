@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, Clapperboard } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import AuthShell from '@/components/auth/AuthShell';
+import Spinner from '@/components/ui/Spinner';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -45,12 +46,9 @@ export default function ResetPasswordPage() {
   if (success) {
     return (
       <AuthShell>
-        <div className="text-center space-y-4">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-green-500/20 border border-green-500/30 mb-2">
-            <span className="text-2xl">✅</span>
-          </div>
-          <h2 className="text-2xl font-bold text-white">Password updated</h2>
-          <p className="text-slate-400 text-sm">Redirecting you to login...</p>
+        <div className="space-y-2">
+          <h1 className="font-display text-display-lg text-screen">Password updated.</h1>
+          <p className="text-body text-fog">Taking you back to log in…</p>
         </div>
       </AuthShell>
     );
@@ -59,57 +57,48 @@ export default function ResetPasswordPage() {
   if (!ready) {
     return (
       <AuthShell>
-        <div className="flex justify-center items-center py-20">
-          <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin" />
-        </div>
+        <div className="flex justify-center py-20"><Spinner /></div>
       </AuthShell>
     );
   }
 
   return (
     <AuthShell>
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-brand/20 border border-brand/30 mb-4">
-            <Clapperboard className="w-6 h-6 text-brand" />
-          </div>
-          <h1 className="text-2xl font-bold text-white">Set new password</h1>
-          <p className="text-slate-400 mt-1 text-sm">Choose a strong password for your account</p>
-        </div>
+      <div className="space-y-2">
+        <h1 className="font-display text-display-lg text-screen">Set a new password.</h1>
+        <p className="text-body text-fog">Choose something you haven’t used before.</p>
+      </div>
 
-        <div className="bg-surface-800 border border-surface-600 rounded-2xl p-6 shadow-2xl">
-          <form onSubmit={handleReset} className="space-y-4">
-            <Input
-              label="New Password"
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="At least 8 characters"
-              icon={<Lock className="w-4 h-4" />}
-              required
-              autoComplete="new-password"
-            />
-            <Input
-              label="Confirm New Password"
-              type="password"
-              value={confirm}
-              onChange={e => setConfirm(e.target.value)}
-              placeholder="Repeat password"
-              icon={<Lock className="w-4 h-4" />}
-              required
-              autoComplete="new-password"
-            />
+      <div className="rounded-panel border border-rail bg-velvet p-6">
+        <form onSubmit={handleReset} className="space-y-4">
+          <Input
+            label="New password"
+            type="password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            placeholder="At least 8 characters"
+            icon={<Lock className="w-4 h-4" />}
+            required
+            autoComplete="new-password"
+          />
+          <Input
+            label="Confirm new password"
+            type="password"
+            value={confirm}
+            onChange={e => setConfirm(e.target.value)}
+            placeholder="Repeat password"
+            icon={<Lock className="w-4 h-4" />}
+            required
+            autoComplete="new-password"
+          />
 
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl px-3 py-2.5">
-                {error}
-              </div>
-            )}
+          {error && (
+            <div className="rounded-xl bg-ticket/15 px-3 py-2.5 text-ui text-ticket">{error}</div>
+          )}
 
-            <Button type="submit" loading={loading} className="w-full" size="lg">
-              Update Password
-            </Button>
-          </form>
-        </div>
+          <Button type="submit" loading={loading} className="w-full" size="lg">Update password</Button>
+        </form>
+      </div>
     </AuthShell>
   );
 }
