@@ -1,25 +1,7 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { movies, getPosterUrl } from '@/lib/api';
+import Image from 'next/image';
 
 // Three vertically-scrolling columns of popular movie posters.
-export default function PosterWall() {
-  const [posters, setPosters] = useState<string[]>([]);
-
-  useEffect(() => {
-    let active = true;
-    Promise.all([movies.popular('movie', 1), movies.popular('movie', 2)])
-      .then(([a, b]) => {
-        const urls = [...a.results, ...b.results]
-          .map(m => getPosterUrl(m.poster_path, 'w342'))
-          .filter((u): u is string => !!u);
-        if (active) setPosters(urls);
-      })
-      .catch(() => {});
-    return () => { active = false; };
-  }, []);
-
+export default function PosterWall({ posters }: { posters: string[] }) {
   if (posters.length === 0) return null;
 
   const columns = [0, 1, 2].map(c => posters.filter((_, i) => i % 3 === c));
@@ -35,15 +17,16 @@ export default function PosterWall() {
             style={{ animation: `${animations[ci]} ${durations[ci]} linear infinite` }}
           >
             {[...col, ...col].map((url, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={i}
-                src={url}
-                alt=""
-                aria-hidden="true"
-                loading="lazy"
-                className="mb-3 aspect-[2/3] w-full rounded-poster object-cover"
-              />
+              <div key={`${url}-${i}`} className="relative mb-3 aspect-[2/3] w-full overflow-hidden rounded-poster">
+                <Image
+                  src={url}
+                  alt=""
+                  aria-hidden="true"
+                  fill
+                  sizes="16vw"
+                  className="object-cover"
+                />
+              </div>
             ))}
           </div>
         </div>

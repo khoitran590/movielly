@@ -29,19 +29,24 @@ async function getSharedList(shareToken) {
 
   if (listError || !list) return null;
 
-  const { data: favorites, error: favError } = await supabase
-    .from('favorites')
-    .select('*')
-    .eq('user_id', list.user_id)
-    .order('added_at', { ascending: false });
+  const [favoritesResult, profileResult] = await Promise.all([
+    supabase
+      .from('favorites')
+      .select('id, user_id, movie_id, movie_title, movie_poster, movie_type, added_at')
+      .eq('user_id', list.user_id)
+      .order('added_at', { ascending: false })
+      .limit(250),
+    supabase
+      .from('profiles')
+      .select('username, avatar_url, bio')
+      .eq('id', list.user_id)
+      .single(),
+  ]);
 
+  const { data: favorites, error: favError } = favoritesResult;
   if (favError) throw favError;
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('username, avatar_url, bio')
-    .eq('id', list.user_id)
-    .single();
+  const { data: profile } = profileResult;
 
   return { title: list.title, owner: profile, items: favorites || [] };
 }

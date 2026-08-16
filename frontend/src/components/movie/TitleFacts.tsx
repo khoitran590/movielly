@@ -1,3 +1,5 @@
+import SectionHeading from '@/components/ui/SectionHeading';
+
 interface Fact {
   label: string;
   value: string | number | null | undefined;
@@ -12,7 +14,7 @@ export default function TitleFacts({ facts }: { facts: Fact[] }) {
 
   return (
     <section className="space-y-3 rounded-panel bg-velvet p-4">
-      <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-fog">Details</h2>
+      <SectionHeading>Details</SectionHeading>
       <dl className="space-y-2">
         {shown.map(f => (
           <div key={f.label} className="flex items-baseline justify-between gap-4">

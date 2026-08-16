@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
+import Image from 'next/image';
 import Link from 'next/link';
 import { lists, getPosterUrl, savedToMovie } from '@/lib/api';
 import MovieCard from '@/components/movie/MovieCard';
@@ -12,16 +13,11 @@ import type { SharedList } from '@/types';
 // The public face of the product: a printed program, not an internal list.
 export default function SharedListPage() {
   const { shareId } = useParams<{ shareId: string }>();
-  const [data, setData] = useState<SharedList | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
-
-  useEffect(() => {
-    lists.getShared(shareId)
-      .then(setData)
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false));
-  }, [shareId]);
+  const { data, isPending: loading, isError: notFound } = useQuery<SharedList>({
+    queryKey: ['sharedList', shareId],
+    queryFn: ({ signal }) => lists.getShared(shareId, signal),
+    enabled: !!shareId,
+  });
 
   if (loading) {
     return (
@@ -60,11 +56,13 @@ export default function SharedListPage() {
             style={{ maskImage: 'linear-gradient(to left, black, transparent 70%)', WebkitMaskImage: 'linear-gradient(to left, black, transparent 70%)' }}
           >
             {backdropPosters.map((src, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={i}
+              <Image
+                key={`${src}-${i}`}
                 src={src}
                 alt=""
+                width={342}
+                height={513}
+                sizes="342px"
                 className="h-[200%] w-auto -ml-16 object-cover"
               />
             ))}
@@ -72,10 +70,9 @@ export default function SharedListPage() {
         )}
 
         <div className="relative mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-5 py-10 sm:px-8">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-velvet">
+          <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-velvet">
             {data.owner?.avatar_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={data.owner.avatar_url} alt="" className="h-full w-full object-cover" />
+              <Image src={data.owner.avatar_url} alt="" fill sizes="48px" className="object-cover" />
             ) : (
               <span className="text-title text-fog">{ownerName[0]?.toUpperCase() || '?'}</span>
             )}

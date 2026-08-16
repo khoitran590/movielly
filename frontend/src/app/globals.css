@@ -16,6 +16,9 @@
     --border: 30 16% 15%;              /* rail */
     --popover: 30 14% 11%;             /* velvet */
     --popover-foreground: 36 33% 92%;  /* screen */
+    --mobile-dock-offset: 1.25rem;
+    --mobile-dock-height: 4rem;
+    --mobile-dock-clearance: calc(var(--mobile-dock-offset) + var(--mobile-dock-height) + 0.75rem);
   }
 
   * {
@@ -33,8 +36,7 @@
     background:
       radial-gradient(1200px 600px at 50% -10%, rgba(224, 168, 74, 0.06), transparent 60%),
       #0B0A09;
-    @apply text-screen antialiased;
-    font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+    @apply font-sans text-screen antialiased;
   }
 
   ::-webkit-scrollbar {
@@ -66,16 +68,6 @@
   .no-scrollbar::-webkit-scrollbar { display: none; }
 }
 
-/* Scrolling backdrop for the liquid-glass demo dock (components/ui/liquid-glass.tsx) */
-@keyframes moveBackground {
-  from {
-    background-position: 0% 0%;
-  }
-  to {
-    background-position: 0% -1000%;
-  }
-}
-
 /* Poster wall vertical marquee (auth pages). Content is duplicated, so -50% loops seamlessly. */
 @keyframes posterScrollUp {
   from { transform: translateY(0); }
@@ -86,11 +78,44 @@
   to   { transform: translateY(0); }
 }
 
+@keyframes heroFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes heroEnter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hero-fade {
+  animation: heroFade 400ms ease-out both;
+}
+
+.hero-enter {
+  animation: heroEnter 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-fade,
+  .hero-enter {
+    animation: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   [style*="posterScroll"] { animation: none !important; }
 }
 
 @layer components {
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tungsten focus-visible:ring-offset-2 focus-visible:ring-offset-ink;
+  }
+
+  .focus-ring-raised {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tungsten focus-visible:ring-offset-2 focus-visible:ring-offset-velvet;
+  }
+
   /* Glass is allowed on nothing by default. Use it only where a surface sits
      over imagery (the mobile dock, a control over a still): an ink tint, not a
      white sheen, and no brand-colored inner glow. */
@@ -120,7 +145,6 @@
   .poster-zoom {
     transition: transform 200ms ease-out;
   }
-  .rail-caption,
   .poster-actions {
     transition: opacity 150ms ease-out;
   }
@@ -132,55 +156,8 @@
     .poster-actions:focus-within { opacity: 1; }
   }
 
-  /* Rail cards drop the caption under the art on desktop (Netflix density)
-     and reveal the title over the poster on hover instead. */
-  @media (min-width: 768px) {
-    .rail-caption { opacity: 0; }
-    .group:hover .rail-caption,
-    .group:focus-visible .rail-caption { opacity: 1; }
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .poster-zoom { transition: none; }
     .group:hover .poster-zoom { transform: none; }
   }
-}
-
-/* Ambient aurora — only the /aurora + /liquid-glass sandbox routes use this.
-   Nothing in the product mounts it. */
-.aurora {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  overflow: hidden;
-  pointer-events: none;
-  contain: layout paint;
-}
-.aurora__blob {
-  position: absolute;
-  border-radius: 9999px;
-  filter: blur(64px);
-  opacity: 0.5;
-  will-change: transform;
-}
-
-@media (max-width: 640px), (pointer: coarse) {
-  .aurora__blob { animation: none !important; }
-}
-@keyframes auroraDrift1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33%      { transform: translate(8vw, 6vh) scale(1.15); }
-  66%      { transform: translate(-6vw, 10vh) scale(0.92); }
-}
-@keyframes auroraDrift2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50%      { transform: translate(-10vw, -8vh) scale(1.2); }
-}
-@keyframes auroraDrift3 {
-  0%, 100% { transform: translate(0, 0) scale(1.05); }
-  50%      { transform: translate(7vw, -6vh) scale(0.9); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .aurora__blob { animation: none !important; }
 }

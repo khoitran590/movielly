@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Camera, Loader2, User as UserIcon } from 'lucide-react';
+import { Camera, User as UserIcon } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { profiles, avatars } from '@/lib/db';
 import { useAuth } from '@/context/AuthContext';
@@ -13,9 +13,6 @@ import { PageSpinner } from '@/components/ui/Spinner';
 const MAX_BIO = 280;
 const MAX_AVATAR_BYTES = 3 * 1024 * 1024; // 3 MB
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
-
-const focusRing =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tungsten focus-visible:ring-offset-2 focus-visible:ring-offset-velvet';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -115,7 +112,7 @@ export default function SettingsPage() {
               type="button"
               onClick={() => fileRef.current?.click()}
               aria-label="Change profile picture"
-              className={`absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-tungsten text-ink transition-colors hover:bg-tungsten-dim ${focusRing}`}
+              className="focus-ring-raised absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-tungsten text-ink transition-colors hover:bg-tungsten-dim"
             >
               <Camera className="w-4 h-4" />
             </button>
@@ -126,7 +123,7 @@ export default function SettingsPage() {
             <p className="truncate font-mono text-meta text-fog">{user.email}</p>
             <button
               onClick={() => fileRef.current?.click()}
-              className={`mt-2 rounded-full text-ui text-tungsten hover:underline ${focusRing}`}
+              className="focus-ring-raised mt-2 rounded-full text-ui text-tungsten hover:underline"
             >
               Change profile picture
             </button>

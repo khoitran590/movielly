@@ -1,76 +1,76 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Star } from 'lucide-react';
-import { useIsMobile } from '@/hooks/useMedia';
 
 interface StarRatingProps {
   value: number;
   onChange?: (value: number) => void;
   readonly?: boolean;
-  max?: number;
   size?: 'sm' | 'md' | 'lg';
 }
 
-const sizes = { sm: 'w-4 h-4', md: 'w-5 h-5', lg: 'w-7 h-7' };
+const sizes = { sm: 'h-4 w-4', md: 'h-5 w-5', lg: 'h-7 w-7' };
 
-const focusRing =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tungsten focus-visible:ring-offset-2 focus-visible:ring-offset-velvet';
+export default function StarRating({ value, onChange, readonly = false, size = 'md' }: StarRatingProps) {
+  const controlRef = useRef<HTMLDivElement>(null);
+  const [preview, setPreview] = useState(0);
+  const interactive = !readonly && Boolean(onChange);
+  const displayed = preview || value;
 
-export default function StarRating({ value, onChange, readonly = false, max = 10, size = 'md' }: StarRatingProps) {
-  const [hovered, setHovered] = useState(0);
-  const isMobile = useIsMobile();
-  const displayed = hovered || value;
-  const interactive = !readonly && !!onChange;
+  const valueFromPointer = (clientX: number) => {
+    const rect = controlRef.current?.getBoundingClientRect();
+    if (!rect) return value;
+    return Math.max(1, Math.min(10, Math.ceil(((clientX - rect.left) / rect.width) * 10)));
+  };
 
-  // Ten 16px stars is not a touch target. On phones, pick the number instead.
-  if (interactive && isMobile) {
-    return (
-      <div className="flex flex-wrap gap-1.5" role="group" aria-label={`Rating out of ${max}`}>
-        {Array.from({ length: max }, (_, i) => i + 1).map(n => (
-          <button
-            key={n}
-            type="button"
-            onClick={() => onChange!(n)}
-            aria-pressed={value === n}
-            className={`h-10 w-10 rounded-full border font-mono text-ui transition-colors ${focusRing} ${
-              n === value
-                ? 'border-tungsten bg-tungsten text-ink'
-                : n < value
-                  ? 'border-tungsten/40 bg-tungsten/10 text-tungsten'
-                  : 'border-rail text-fog hover:border-screen hover:text-screen'
-            }`}
-          >
-            {n}
-          </button>
-        ))}
-      </div>
-    );
-  }
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (!interactive) return;
+    let next = value;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowUp') next = Math.min(10, Math.max(1, value + 1));
+    else if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') next = Math.max(1, value - 1);
+    else if (event.key === 'Home') next = 1;
+    else if (event.key === 'End') next = 10;
+    else return;
+    event.preventDefault();
+    onChange?.(next);
+  };
 
   return (
-    <div className="flex items-center gap-0.5">
-      {Array.from({ length: max }, (_, i) => i + 1).map(star => (
-        <button
-          key={star}
-          type="button"
-          disabled={readonly}
-          onClick={() => onChange?.(star)}
-          onMouseEnter={() => interactive && setHovered(star)}
-          onMouseLeave={() => interactive && setHovered(0)}
-          aria-label={readonly ? undefined : `Rate ${star} out of ${max}`}
-          className={`rounded transition-transform duration-100 ${
-            readonly ? 'cursor-default' : `cursor-pointer p-0.5 hover:scale-110 ${focusRing}`
-          }`}
-        >
-          <Star
-            className={`${sizes[size]} transition-colors ${
-              star <= displayed ? 'fill-tungsten text-tungsten' : 'fill-transparent text-rail'
-            }`}
-          />
-        </button>
-      ))}
-      {value > 0 && <span className="ml-1.5 font-mono text-meta text-tungsten">{value}/{max}</span>}
+    <div className="flex items-center gap-2">
+      <div
+        ref={controlRef}
+        role={interactive ? 'slider' : 'img'}
+        tabIndex={interactive ? 0 : undefined}
+        aria-label={interactive ? 'Rating' : `Rating: ${value} out of 10`}
+        aria-valuemin={interactive ? 0 : undefined}
+        aria-valuemax={interactive ? 10 : undefined}
+        aria-valuenow={interactive ? value : undefined}
+        aria-valuetext={interactive ? (value ? `${value} out of 10` : 'Not rated') : undefined}
+        onKeyDown={handleKeyDown}
+        onPointerMove={(event) => interactive && setPreview(valueFromPointer(event.clientX))}
+        onPointerLeave={() => setPreview(0)}
+        onClick={(event) => interactive && onChange?.(valueFromPointer(event.clientX))}
+        className={`flex items-center gap-0.5 rounded ${interactive ? 'focus-ring-raised min-h-11 cursor-pointer touch-none' : ''}`}
+      >
+        {Array.from({ length: 5 }, (_, index) => {
+          const fill = Math.max(0, Math.min(2, displayed - index * 2)) * 50;
+          const hitArea = interactive
+            ? 'flex h-11 w-11 items-center justify-center [@media(pointer:fine)]:h-auto [@media(pointer:fine)]:w-auto [@media(pointer:fine)]:p-0.5'
+            : '';
+          return (
+            <span key={index} className={`relative block ${hitArea}`} aria-hidden>
+              <Star className={`${sizes[size]} fill-transparent text-rail`} />
+              <span className="absolute inset-y-0 left-0 overflow-hidden" style={{ width: `${fill}%` }}>
+                <span className={`block ${hitArea}`}>
+                  <Star className={`${sizes[size]} fill-tungsten text-tungsten`} />
+                </span>
+              </span>
+            </span>
+          );
+        })}
+      </div>
+      {value > 0 && <span className="font-mono text-meta text-tungsten">{value}/10</span>}
     </div>
   );
 }

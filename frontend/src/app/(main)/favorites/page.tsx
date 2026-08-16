@@ -17,7 +17,7 @@ import { PageSpinner } from '@/components/ui/Spinner';
 export default function FavoritesPage() {
   const { user, session, loading } = useAuth();
   const router = useRouter();
-  const { items, refetch } = useFavorites();
+  const { items } = useFavorites();
   const { toast } = useToast();
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
@@ -27,8 +27,6 @@ export default function FavoritesPage() {
   useEffect(() => {
     if (!loading && !user) router.push('/login');
   }, [user, loading, router]);
-
-  useEffect(() => { refetch(); }, []);
 
   const handleShare = async () => {
     if (!session?.access_token) return;

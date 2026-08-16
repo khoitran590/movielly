@@ -1,9 +1,32 @@
 import type { Metadata } from 'next';
+import { Bodoni_Moda, IBM_Plex_Mono, Manrope } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import Providers from '@/components/Providers';
 import { ToastProvider } from '@/components/ui/Toast';
 import SiteChrome from '@/components/layout/SiteChrome';
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-manrope',
+  display: 'swap',
+});
+
+const bodoniModa = Bodoni_Moda({
+  subsets: ['latin'],
+  weight: ['500', '600'],
+  style: ['normal', 'italic'],
+  variable: '--font-bodoni-moda',
+  display: 'swap',
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-ibm-plex-mono',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Movielly — Discover, Review & Share Movies',
@@ -12,16 +35,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* Display: Bodoni Moda · Body/UI: Manrope · Data: IBM Plex Mono */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,600;1,6..96,500;1,6..96,600&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html
+      lang="en"
+      className={`dark ${manrope.variable} ${bodoniModa.variable} ${ibmPlexMono.variable}`}
+    >
       <body>
         <a
           href="#main"

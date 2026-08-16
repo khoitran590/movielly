@@ -16,6 +16,10 @@ CREATE TABLE IF NOT EXISTS public.friendships (
 
 CREATE INDEX IF NOT EXISTS friendships_requester_idx ON public.friendships (requester_id);
 CREATE INDEX IF NOT EXISTS friendships_addressee_idx ON public.friendships (addressee_id);
+CREATE INDEX IF NOT EXISTS friendships_requester_status_idx
+  ON public.friendships (requester_id, status, addressee_id);
+CREATE INDEX IF NOT EXISTS friendships_addressee_status_idx
+  ON public.friendships (addressee_id, status, requester_id);
 
 ALTER TABLE public.friendships ENABLE ROW LEVEL SECURITY;
 

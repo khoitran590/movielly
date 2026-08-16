@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
@@ -18,9 +19,6 @@ type View = 'loading' | 'ok' | 'not-friends' | 'notfound';
 // Guard: ids come from the URL and are interpolated into PostgREST .or() filters,
 // so reject anything that isn't a canonical UUID before querying.
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-const focusRing =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tungsten focus-visible:ring-offset-2 focus-visible:ring-offset-ink';
 
 export default function FriendProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -43,13 +41,14 @@ export default function FriendProfilePage() {
     let active = true;
     (async () => {
       setView('loading');
-      const prof = await profiles.get(id);
+      const [prof, friendship] = await Promise.all([
+        profiles.get(id),
+        friendships.acceptedBetween(user.id, id),
+      ]);
       if (!active) return;
       if (!prof) { setView('notfound'); return; }
       setProfile(prof);
 
-      const friendship = await friendships.acceptedBetween(user.id, id);
-      if (!active) return;
       if (!friendship) { setView('not-friends'); return; }
 
       const [wl, token] = await Promise.all([
@@ -71,15 +70,14 @@ export default function FriendProfilePage() {
 
   return (
     <div className="mx-auto max-w-7xl animate-fade-in space-y-8 px-5 py-8 sm:px-8">
-      <Link href="/friends" className={`inline-flex items-center gap-1.5 rounded-full text-ui text-fog transition-colors hover:text-screen ${focusRing}`}>
+      <Link href="/friends" className="focus-ring inline-flex items-center gap-1.5 rounded-full text-ui text-fog transition-colors hover:text-screen">
         <ChevronLeft className="w-4 h-4" /> Friends
       </Link>
 
       <header className="flex flex-wrap items-center gap-5">
-        <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-velvet">
+        <div className="relative flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-velvet">
           {profile?.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+            <Image src={profile.avatar_url} alt="" fill sizes="72px" className="object-cover" />
           ) : (
             <span className="font-display text-display-md text-fog">{initial}</span>
           )}
@@ -94,7 +92,7 @@ export default function FriendProfilePage() {
         {view === 'ok' && shareToken && (
           <Link
             href={`/list/${shareToken}`}
-            className={`ml-auto rounded-full border border-rail px-4 py-2 text-ui font-semibold text-screen transition-colors hover:border-screen ${focusRing}`}
+            className="focus-ring ml-auto rounded-full border border-rail px-4 py-2 text-ui font-semibold text-screen transition-colors hover:border-screen"
           >
             Their favorites
           </Link>

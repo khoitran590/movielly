@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { UserPlus, Check, X, UserMinus } from 'lucide-react';
@@ -9,19 +10,16 @@ import { useFriends } from '@/hooks/useFriends';
 import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import EmptyState from '@/components/ui/EmptyState';
+import SectionHeading from '@/components/ui/SectionHeading';
 import { PageSpinner } from '@/components/ui/Spinner';
 import type { FriendEntry } from '@/types';
-
-const focusRing =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tungsten focus-visible:ring-offset-2 focus-visible:ring-offset-ink';
 
 function Avatar({ entry }: { entry: FriendEntry }) {
   const name = entry.profile.username || 'User';
   return (
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-seat">
+    <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-seat">
       {entry.profile.avatar_url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={entry.profile.avatar_url} alt="" className="h-full w-full object-cover" />
+        <Image src={entry.profile.avatar_url} alt="" fill sizes="40px" className="object-cover" />
       ) : (
         <span className="text-ui font-semibold text-fog">{name[0]?.toUpperCase() || '?'}</span>
       )}
@@ -84,7 +82,7 @@ export default function FriendsPage() {
     </li>
   );
 
-  const quietLink = `rounded-full text-ui text-fog transition-colors hover:text-screen ${focusRing}`;
+  const quietLink = 'focus-ring rounded-full text-ui text-fog transition-colors hover:text-screen';
 
   return (
     <div className="mx-auto max-w-3xl animate-fade-in space-y-8 px-5 py-8 sm:px-8">
@@ -112,9 +110,7 @@ export default function FriendsPage() {
 
       {incoming.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-fog">
-            Requests <span className="font-mono normal-case tracking-normal text-ticket">{incoming.length}</span>
-          </h2>
+          <SectionHeading count={incoming.length} tone="urgent">Requests</SectionHeading>
           <ul className="space-y-2">
             {incoming.map(entry => row(entry, (
               <>
@@ -124,7 +120,7 @@ export default function FriendsPage() {
                 <button
                   onClick={() => handleRemove(entry, 'Declined request from')}
                   aria-label={`Decline request from ${entry.profile.username}`}
-                  className={`rounded-full p-2 text-fog transition-colors hover:bg-ticket/10 hover:text-ticket ${focusRing}`}
+                  className="focus-ring rounded-full p-2 text-fog transition-colors hover:bg-ticket/10 hover:text-ticket"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -135,7 +131,7 @@ export default function FriendsPage() {
       )}
 
       <section className="space-y-3">
-        <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-fog">Your friends</h2>
+        <SectionHeading>Your friends</SectionHeading>
         {loading ? (
           <div className="h-16 animate-pulse rounded-panel bg-velvet" />
         ) : friends.length === 0 ? (
@@ -157,7 +153,7 @@ export default function FriendsPage() {
                 <button
                   onClick={() => handleRemove(entry, 'Removed')}
                   aria-label={`Remove ${entry.profile.username}`}
-                  className={`rounded-full p-2 text-fog transition-colors hover:bg-ticket/10 hover:text-ticket ${focusRing}`}
+                  className="focus-ring rounded-full p-2 text-fog transition-colors hover:bg-ticket/10 hover:text-ticket"
                 >
                   <UserMinus className="w-4 h-4" />
                 </button>
@@ -169,9 +165,7 @@ export default function FriendsPage() {
 
       {outgoing.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-fog">
-            Pending <span className="font-mono normal-case tracking-normal">{outgoing.length}</span>
-          </h2>
+          <SectionHeading count={outgoing.length}>Pending</SectionHeading>
           <ul className="space-y-2">
             {outgoing.map(entry => row(entry, (
               <>
@@ -179,7 +173,7 @@ export default function FriendsPage() {
                 <button
                   onClick={() => handleRemove(entry, 'Cancelled request to')}
                   aria-label={`Cancel request to ${entry.profile.username}`}
-                  className={`rounded-full p-2 text-fog transition-colors hover:bg-ticket/10 hover:text-ticket ${focusRing}`}
+                  className="focus-ring rounded-full p-2 text-fog transition-colors hover:bg-ticket/10 hover:text-ticket"
                 >
                   <X className="w-4 h-4" />
                 </button>

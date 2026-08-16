@@ -26,9 +26,9 @@ exports.search = async (req, res) => {
 };
 
 exports.trending = async (req, res) => {
-  const { time_window = 'week', media_type = 'all' } = req.query;
+  const { time_window = 'week', media_type = 'all', page = 1 } = req.query;
   try {
-    res.json(await tmdbService.trending(media_type, time_window));
+    res.json(await tmdbService.trending(media_type, time_window, page));
   } catch (err) {
     handleTmdbError(err, res);
   }
@@ -70,12 +70,14 @@ exports.genres = async (req, res) => {
 
 // Browse by genre (used by the home-page genre filter)
 exports.discover = async (req, res) => {
-  const { type = 'movie', with_genres, year, page = 1, sort_by = 'popularity.desc' } = req.query;
+  const { type = 'movie', with_genres, year, date_from, date_to, page = 1, sort_by = 'popularity.desc' } = req.query;
   const base = type === 'tv' ? 'tv' : 'movie';
   try {
     res.json(await tmdbService.discover(base, {
       with_genres,
       ...(year && (base === 'tv' ? { first_air_date_year: year } : { primary_release_year: year })),
+      ...(date_from && { [base === 'tv' ? 'first_air_date.gte' : 'primary_release_date.gte']: date_from }),
+      ...(date_to && { [base === 'tv' ? 'first_air_date.lte' : 'primary_release_date.lte']: date_to }),
       page,
       sort_by,
       include_adult: false,

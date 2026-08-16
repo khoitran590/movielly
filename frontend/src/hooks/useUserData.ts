@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { reviews as reviewsDb } from '@/lib/db';
 import { useAuth } from '@/context/AuthContext';
@@ -50,6 +51,6 @@ export function useMyReviews() {
     queryFn: () => reviewsDb.listByUser(user!.id),
     enabled: !!user,
   });
-  const byMovieId = new Map(reviews.map(r => [r.movie_id, r]));
+  const byMovieId = useMemo(() => new Map(reviews.map(r => [r.movie_id, r])), [reviews]);
   return { reviews, byMovieId, loading: !!user && isLoading };
 }

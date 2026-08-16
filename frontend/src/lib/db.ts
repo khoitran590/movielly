@@ -6,6 +6,12 @@ import { createClient } from './supabase';
 import type { WatchlistItem, FavoriteItem, Review, FriendProfile } from '@/types';
 
 const supabase = createClient();
+const TITLE_LIST_LIMIT = 250;
+const REVIEW_LIMIT = 100;
+const FRIENDSHIP_LIMIT = 200;
+const TITLE_LIST_COLUMNS = 'id, user_id, movie_id, movie_title, movie_poster, movie_type, added_at';
+const REVIEW_COLUMNS = 'id, user_id, movie_id, movie_title, movie_poster, movie_type, rating, content, created_at, updated_at';
+const FRIENDSHIP_COLUMNS = 'id, requester_id, addressee_id, status, created_at, updated_at';
 
 export interface FriendshipRow {
   id: string;
@@ -60,9 +66,10 @@ const titleList = (table: TitleListTable) => ({
   list: async (userId: string): Promise<TitleListItem[]> => {
     const { data } = await supabase
       .from(table)
-      .select('*')
+      .select(TITLE_LIST_COLUMNS)
       .eq('user_id', userId)
-      .order('added_at', { ascending: false });
+      .order('added_at', { ascending: false })
+      .limit(TITLE_LIST_LIMIT);
     return (data as TitleListItem[]) || [];
   },
 
@@ -70,7 +77,7 @@ const titleList = (table: TitleListTable) => ({
     const { data } = await supabase
       .from(table)
       .insert({ ...item, user_id: userId })
-      .select()
+      .select(TITLE_LIST_COLUMNS)
       .single();
     return (data as TitleListItem | null) ?? null;
   },
@@ -91,9 +98,10 @@ export const reviews = {
   listForMovie: async (movieId: number): Promise<Review[]> => {
     const { data } = await supabase
       .from('reviews')
-      .select('*')
+      .select(REVIEW_COLUMNS)
       .eq('movie_id', movieId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(REVIEW_LIMIT);
 
     const rows = (data as Review[]) || [];
     const userIds = [...new Set(rows.map(r => r.user_id))];
@@ -111,9 +119,10 @@ export const reviews = {
   listByUser: async (userId: string): Promise<Review[]> => {
     const { data } = await supabase
       .from('reviews')
-      .select('*')
+      .select(REVIEW_COLUMNS)
       .eq('user_id', userId)
-      .order('updated_at', { ascending: false });
+      .order('updated_at', { ascending: false })
+      .limit(REVIEW_LIMIT);
     return (data as Review[]) || [];
   },
 
@@ -127,9 +136,7 @@ export const reviews = {
       .upsert(
         { ...payload, user_id: userId, movie_id: movieId, updated_at: new Date().toISOString() },
         { onConflict: 'user_id,movie_id' }
-      )
-      .select('*')
-      .single();
+      );
     return { error };
   },
 
@@ -144,9 +151,10 @@ export const friendships = {
   listFor: async (userId: string): Promise<FriendshipRow[]> => {
     const { data } = await supabase
       .from('friendships')
-      .select('*')
+      .select(FRIENDSHIP_COLUMNS)
       .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(FRIENDSHIP_LIMIT);
     return (data as FriendshipRow[]) || [];
   },
 
@@ -154,9 +162,11 @@ export const friendships = {
   between: async (userId: string, otherId: string): Promise<FriendshipRow | undefined> => {
     const { data } = await supabase
       .from('friendships')
-      .select('*')
-      .or(`and(requester_id.eq.${userId},addressee_id.eq.${otherId}),and(requester_id.eq.${otherId},addressee_id.eq.${userId})`);
-    return ((data as FriendshipRow[]) || [])[0];
+      .select(FRIENDSHIP_COLUMNS)
+      .or(`and(requester_id.eq.${userId},addressee_id.eq.${otherId}),and(requester_id.eq.${otherId},addressee_id.eq.${userId})`)
+      .limit(1)
+      .maybeSingle();
+    return (data as FriendshipRow | null) ?? undefined;
   },
 
   acceptedBetween: async (userId: string, otherId: string) => {

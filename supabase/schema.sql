@@ -53,6 +53,11 @@ CREATE TABLE IF NOT EXISTS public.reviews (
 
 ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
 
+CREATE INDEX IF NOT EXISTS reviews_movie_created_idx
+  ON public.reviews (movie_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS reviews_user_updated_idx
+  ON public.reviews (user_id, updated_at DESC);
+
 CREATE POLICY "Reviews are viewable by everyone"
   ON public.reviews FOR SELECT USING (true);
 
@@ -81,6 +86,9 @@ CREATE TABLE IF NOT EXISTS public.watchlist (
 
 ALTER TABLE public.watchlist ENABLE ROW LEVEL SECURITY;
 
+CREATE INDEX IF NOT EXISTS watchlist_user_added_idx
+  ON public.watchlist (user_id, added_at DESC);
+
 CREATE POLICY "Users can view own watchlist"
   ON public.watchlist FOR SELECT USING (auth.uid() = user_id);
 
@@ -105,6 +113,9 @@ CREATE TABLE IF NOT EXISTS public.favorites (
 );
 
 ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
+
+CREATE INDEX IF NOT EXISTS favorites_user_added_idx
+  ON public.favorites (user_id, added_at DESC);
 
 CREATE POLICY "Users can view own favorites"
   ON public.favorites FOR SELECT USING (auth.uid() = user_id);
@@ -151,6 +162,10 @@ CREATE TABLE IF NOT EXISTS public.friendships (
 
 CREATE INDEX IF NOT EXISTS friendships_requester_idx ON public.friendships (requester_id);
 CREATE INDEX IF NOT EXISTS friendships_addressee_idx ON public.friendships (addressee_id);
+CREATE INDEX IF NOT EXISTS friendships_requester_status_idx
+  ON public.friendships (requester_id, status, addressee_id);
+CREATE INDEX IF NOT EXISTS friendships_addressee_status_idx
+  ON public.friendships (addressee_id, status, requester_id);
 
 ALTER TABLE public.friendships ENABLE ROW LEVEL SECURITY;
 

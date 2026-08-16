@@ -10,8 +10,13 @@ const axios = require('axios');
 const movieTrailerPkg = require('movie-trailer');
 const { tmdb } = require('./tmdb.service');
 const { rankYouTube } = require('../lib/pickYouTube');
+const { mapWithConcurrency } = require('../lib/concurrency');
 
 const movieTrailer = movieTrailerPkg.default || movieTrailerPkg;
+const configuredConcurrency = Number(process.env.TRAILER_CONCURRENCY);
+const TRAILER_CONCURRENCY = Number.isInteger(configuredConcurrency) && configuredConcurrency > 0
+  ? configuredConcurrency
+  : 4;
 
 // KinoCheck: human-curated trailer picks by TMDB id (anonymous: 1000 req/day).
 const kinocheck = axios.create({
@@ -142,7 +147,7 @@ async function getMovieCollectionTrailers(id) {
     }
   }
 
-  const resolved = await Promise.all(parts.map(async p => {
+  const resolved = await mapWithConcurrency(parts, TRAILER_CONCURRENCY, async p => {
     const t = await getHybridTrailer('movie', p.id);
     if (!t?.youtube_video_id) return null;
     return {
@@ -151,7 +156,7 @@ async function getMovieCollectionTrailers(id) {
       sublabel: (p.release_date || '').slice(0, 4) || null,
       poster_path: p.poster_path || null,
     };
-  }));
+  });
   return resolved.filter(Boolean);
 }
 
@@ -160,7 +165,7 @@ async function getTvSeasonTrailers(id) {
   const { data: show } = await tmdb.get(`/tv/${id}`);
   const seasons = (show.seasons || []).filter(s => s.season_number > 0);
 
-  const resolved = await Promise.all(seasons.map(async s => {
+  const resolved = await mapWithConcurrency(seasons, TRAILER_CONCURRENCY, async s => {
     try {
       const { data } = await tmdb.get(`/tv/${id}/season/${s.season_number}/videos`);
       const candidates = rankYouTube(data?.results).map(v => ({ youtube_video_id: v.key }));
@@ -177,7 +182,7 @@ async function getTvSeasonTrailers(id) {
       console.warn(`Season ${s.season_number} videos failed for tv/${id}: ${err.message}`);
     }
     return null;
-  }));
+  });
 
   let list = resolved.filter(Boolean);
   if (list.length === 0) {

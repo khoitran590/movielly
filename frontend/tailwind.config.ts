@@ -1,18 +1,5 @@
 import type { Config } from 'tailwindcss';
 
-// Exposes every Tailwind color as a global CSS var (e.g. --blue-500), which the
-// aurora-background component reads directly. Required by ui/aurora-background.tsx.
-const flattenColorPalette = require('tailwindcss/lib/util/flattenColorPalette').default;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function addVariablesForColors({ addBase, theme }: any) {
-  const allColors = flattenColorPalette(theme('colors'));
-  const newVars = Object.fromEntries(
-    Object.entries(allColors).map(([key, val]) => [`--${key}`, val as string])
-  );
-  addBase({ ':root': newVars });
-}
-
 const config: Config = {
   darkMode: 'class',
   content: [
@@ -58,9 +45,9 @@ const config: Config = {
         },
       },
       fontFamily: {
-        display: ['"Bodoni Moda"', 'Georgia', 'serif'],
-        sans: ['Manrope', 'system-ui', 'sans-serif'],
-        mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
+        display: ['var(--font-bodoni-moda)', 'Georgia', 'serif'],
+        sans: ['var(--font-manrope)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-ibm-plex-mono)', 'ui-monospace', 'monospace'],
       },
       // The whole type scale. Do not invent sizes outside this list.
       fontSize: {
@@ -69,8 +56,13 @@ const config: Config = {
         'display-md': ['28px', { lineHeight: '1.15', letterSpacing: '-0.015em' }],
         title: ['18px', { lineHeight: '1.3', letterSpacing: '-0.01em' }],
         body: ['15px', { lineHeight: '1.6', letterSpacing: '0' }],
+        card: ['14px', { lineHeight: '1.35', letterSpacing: '-0.005em' }],
         ui: ['13px', { lineHeight: '1.4', letterSpacing: '0.01em' }],
         meta: ['12px', { lineHeight: '1.4', letterSpacing: '0.04em' }],
+        caption: ['11px', { lineHeight: '1.35', letterSpacing: '0.02em' }],
+        fineprint: ['10px', { lineHeight: '1.35', letterSpacing: '0.02em' }],
+        wordmark: ['22px', { lineHeight: '1', letterSpacing: '-0.01em' }],
+        'display-hero': ['48px', { lineHeight: '1.05', letterSpacing: '-0.025em' }],
       },
       borderRadius: {
         poster: '6px',  // posters and thumbnails — almost sharp, like a print
@@ -84,19 +76,14 @@ const config: Config = {
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',
         'slide-up': 'slideUp 0.3s ease-out',
-        aurora: 'aurora 60s linear infinite',
       },
       keyframes: {
         fadeIn: { from: { opacity: '0' }, to: { opacity: '1' } },
         slideUp: { from: { opacity: '0', transform: 'translateY(16px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
-        aurora: {
-          from: { backgroundPosition: '50% 50%, 50% 50%' },
-          to: { backgroundPosition: '350% 50%, 350% 50%' },
-        },
       },
     },
   },
-  plugins: [addVariablesForColors, require('tailwindcss-animate')],
+  plugins: [require('tailwindcss-animate')],
 };
 
 export default config;

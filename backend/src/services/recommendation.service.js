@@ -5,11 +5,17 @@ const { tmdb } = require('./tmdb.service');
 const { rankSimilar } = require('../lib/rankSimilar');
 
 async function getSimilar(base, id) {
-  const [detailsRes, keywordsRes, recsRes, similarRes] = await Promise.all([
+  // Recommendations and TMDB's similar list are independent. Start them now,
+  // but don't make discovery wait for them once details + keywords are ready.
+  const recommendationsPromise = tmdb
+    .get(`/${base}/${id}/recommendations`)
+    .catch(() => ({ data: { results: [] } }));
+  const similarPromise = tmdb
+    .get(`/${base}/${id}/similar`)
+    .catch(() => ({ data: { results: [] } }));
+  const [detailsRes, keywordsRes] = await Promise.all([
     tmdb.get(`/${base}/${id}`),
     tmdb.get(`/${base}/${id}/keywords`).catch(() => ({ data: {} })),
-    tmdb.get(`/${base}/${id}/recommendations`).catch(() => ({ data: { results: [] } })),
-    tmdb.get(`/${base}/${id}/similar`).catch(() => ({ data: { results: [] } })),
   ]);
 
   const details = detailsRes.data;
@@ -42,7 +48,11 @@ async function getSimilar(base, id) {
       },
     }).then(r => ({ weight: 1, results: r.data.results })).catch(() => ({ weight: 1, results: [] })));
   }
-  const discovered = await Promise.all(discoverCalls);
+  const [recsRes, similarRes, ...discovered] = await Promise.all([
+    recommendationsPromise,
+    similarPromise,
+    ...discoverCalls,
+  ]);
 
   const ranked = rankSimilar({
     selfId: id,

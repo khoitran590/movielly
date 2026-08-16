@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import type { CastMember } from '@/types';
+import SectionHeading from '@/components/ui/SectionHeading';
 
 // A credits roll, not a social-app grid: one horizontal strip of faces.
 export default function CastStrip({ cast }: { cast: CastMember[] }) {
@@ -7,7 +8,7 @@ export default function CastStrip({ cast }: { cast: CastMember[] }) {
 
   return (
     <section className="space-y-3">
-      <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-fog">Cast</h2>
+      <SectionHeading>Cast</SectionHeading>
       <ul aria-label="Cast" className="no-scrollbar flex gap-5 overflow-x-auto pb-1">
         {cast.map(member => (
           <li key={member.id} className="w-16 shrink-0 text-center">

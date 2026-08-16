@@ -1,8 +1,9 @@
 import axios from 'axios';
-import type { Movie, TmdbResponse, TrailerItem, Genre, WatchProviders } from '@/types';
+import type { Movie, TmdbResponse, TrailerItem, Genre, WatchProviders, SharedList } from '@/types';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+  timeout: 10_000,
 });
 
 const TMDB_IMG = process.env.NEXT_PUBLIC_TMDB_IMAGE_BASE || 'https://image.tmdb.org/t/p';
@@ -40,53 +41,74 @@ export const savedToMovie = (item: {
 });
 
 export const movies = {
-  search: (query: string, page = 1, type = 'multi') =>
-    api.get<TmdbResponse<Movie>>('/api/movies/search', { params: { query, page, type } }).then(r => r.data),
+  search: (query: string, page = 1, type = 'multi', signal?: AbortSignal) =>
+    api.get<TmdbResponse<Movie>>('/api/movies/search', { params: { query, page, type }, signal }).then(r => r.data),
 
-  trending: (timeWindow: 'day' | 'week' = 'week', mediaType = 'all') =>
-    api.get<TmdbResponse<Movie>>('/api/movies/trending', { params: { time_window: timeWindow, media_type: mediaType } }).then(r => r.data),
+  trending: (timeWindow: 'day' | 'week' = 'week', mediaType = 'all', page = 1, signal?: AbortSignal) =>
+    api.get<TmdbResponse<Movie>>('/api/movies/trending', { params: { time_window: timeWindow, media_type: mediaType, page }, signal }).then(r => r.data),
 
-  getMovie: (id: number) =>
-    api.get<Movie>(`/api/movies/movie/${id}`).then(r => r.data),
+  getMovie: (id: number, signal?: AbortSignal) =>
+    api.get<Movie>(`/api/movies/movie/${id}`, { signal }).then(r => r.data),
 
-  getTv: (id: number) =>
-    api.get<Movie>(`/api/movies/tv/${id}`).then(r => r.data),
+  getTv: (id: number, signal?: AbortSignal) =>
+    api.get<Movie>(`/api/movies/tv/${id}`, { signal }).then(r => r.data),
 
-  popular: (type: 'movie' | 'tv' = 'movie', page = 1) =>
-    api.get<TmdbResponse<Movie>>('/api/movies/popular', { params: { type, page } }).then(r => r.data),
+  popular: (type: 'movie' | 'tv' = 'movie', page = 1, signal?: AbortSignal) =>
+    api.get<TmdbResponse<Movie>>('/api/movies/popular', { params: { type, page }, signal }).then(r => r.data),
 
-  genres: (type: 'movie' | 'tv' = 'movie') =>
-    api.get<{ genres: Genre[] }>('/api/movies/genres', { params: { type } }).then(r => r.data.genres),
+  genres: (type: 'movie' | 'tv' = 'movie', signal?: AbortSignal) =>
+    api.get<{ genres: Genre[] }>('/api/movies/genres', { params: { type }, signal }).then(r => r.data.genres),
 
-  discover: (type: 'movie' | 'tv', genreId?: number | null, year?: number | null, sortBy?: string | null, page = 1) =>
+  discover: ({
+    type,
+    genreId,
+    year,
+    dateFrom,
+    dateTo,
+    sortBy,
+    page = 1,
+    signal,
+  }: {
+    type: 'movie' | 'tv';
+    genreId?: number | null;
+    year?: number | null;
+    dateFrom?: string | null;
+    dateTo?: string | null;
+    sortBy?: string | null;
+    page?: number;
+    signal?: AbortSignal;
+  }) =>
     api.get<TmdbResponse<Movie>>('/api/movies/discover', {
       params: {
         type,
         ...(genreId ? { with_genres: genreId } : {}),
         ...(year ? { year } : {}),
+        ...(dateFrom ? { date_from: dateFrom } : {}),
+        ...(dateTo ? { date_to: dateTo } : {}),
         ...(sortBy ? { sort_by: sortBy } : {}),
         page,
       },
+      signal,
     }).then(r => r.data),
 
-  trailer: (type: 'movie' | 'tv', id: number) =>
+  trailer: (type: 'movie' | 'tv', id: number, signal?: AbortSignal) =>
     api.get<{ youtube_video_id: string | null; title: string | null; source: string | null }>(
-      `/api/movies/${type}/${id}/trailer`
+      `/api/movies/${type}/${id}/trailer`, { signal }
     ).then(r => r.data),
 
-  trailers: (type: 'movie' | 'tv', id: number) =>
+  trailers: (type: 'movie' | 'tv', id: number, signal?: AbortSignal) =>
     api.get<{ trailers: TrailerItem[] }>(
-      `/api/movies/${type}/${id}/trailers`
+      `/api/movies/${type}/${id}/trailers`, { signal }
     ).then(r => r.data.trailers),
 
-  similar: (type: 'movie' | 'tv', id: number) =>
+  similar: (type: 'movie' | 'tv', id: number, signal?: AbortSignal) =>
     api.get<{ results: Movie[] }>(
-      `/api/movies/${type}/${id}/similar`
+      `/api/movies/${type}/${id}/similar`, { signal }
     ).then(r => r.data.results),
 
-  providers: (type: 'movie' | 'tv', id: number, region = 'US') =>
+  providers: (type: 'movie' | 'tv', id: number, region = 'US', signal?: AbortSignal) =>
     api.get<WatchProviders>(
-      `/api/movies/${type}/${id}/providers`, { params: { region } }
+      `/api/movies/${type}/${id}/providers`, { params: { region }, signal }
     ).then(r => r.data),
 };
 
@@ -98,6 +120,6 @@ export const lists = {
   share: (token: string, title?: string) =>
     api.post('/api/lists/share', { title }, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.data),
 
-  getShared: (shareToken: string) =>
-    api.get(`/api/lists/${shareToken}`).then(r => r.data),
+  getShared: (shareToken: string, signal?: AbortSignal) =>
+    api.get<SharedList>(`/api/lists/${shareToken}`, { signal }).then(r => r.data),
 };

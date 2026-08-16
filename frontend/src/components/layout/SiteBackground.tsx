@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 
 // Site-wide animated beams background. Same beam field as
-// components/ui/beams-background.tsx, but rendered as a fixed full-screen layer
+// A quiet, fixed background layer rendered behind the product chrome.
 // behind all content (no hero text). Honors prefers-reduced-motion: paints one
 // static frame instead of animating on low-end / reduced-motion devices.
 

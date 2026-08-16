@@ -18,9 +18,6 @@ interface TitleHeroProps {
   actions: React.ReactNode;
 }
 
-const focusRing =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tungsten focus-visible:ring-offset-2 focus-visible:ring-offset-ink';
-
 // A still from the film, then the credits. Shared by /movie/[id] and /tv/[id] —
 // they differ in data, never in layout.
 export default function TitleHero({
@@ -59,7 +56,7 @@ export default function TitleHero({
 
       <button
         onClick={() => router.back()}
-        className={`absolute left-5 top-5 z-10 inline-flex items-center gap-1.5 rounded-full bg-ink/40 px-3 py-1.5 text-ui text-screen backdrop-blur-sm transition-colors hover:bg-ink/70 sm:left-8 ${focusRing}`}
+        className="focus-ring absolute left-5 top-5 z-10 inline-flex items-center gap-1.5 rounded-full bg-ink/40 px-3 py-1.5 text-ui text-screen backdrop-blur-sm transition-colors hover:bg-ink/70 sm:left-8"
       >
         <ChevronLeft className="w-4 h-4" /> Back
       </button>
@@ -75,7 +72,7 @@ export default function TitleHero({
           )}
 
           <div className="min-w-0 flex-1 space-y-3">
-            <h1 className="font-display text-display-lg text-screen md:text-[48px] md:leading-[1.05]">{title}</h1>
+            <h1 className="font-display text-display-lg text-screen md:text-display-hero">{title}</h1>
 
             <p className="font-mono text-meta text-screen">
               {meta}

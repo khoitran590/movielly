@@ -2,6 +2,11 @@
 // controllers never build TMDB URLs themselves.
 const axios = require('axios');
 
+const configuredTimeout = Number(process.env.TMDB_TIMEOUT_MS);
+const TMDB_TIMEOUT_MS = Number.isFinite(configuredTimeout) && configuredTimeout > 0
+  ? configuredTimeout
+  : 8000;
+
 if (!process.env.TMDB_API_KEY) {
   console.error('\n[Movielly] Missing TMDB config. Set TMDB_API_KEY in backend/.env\n');
   process.exit(1);
@@ -10,6 +15,7 @@ if (!process.env.TMDB_API_KEY) {
 const tmdb = axios.create({
   baseURL: process.env.TMDB_BASE_URL || 'https://api.themoviedb.org/3',
   params: { api_key: process.env.TMDB_API_KEY },
+  timeout: TMDB_TIMEOUT_MS,
 });
 
 const search = (type, query, page) => {
@@ -19,8 +25,8 @@ const search = (type, query, page) => {
   return tmdb.get(endpoint, { params: { query, page, include_adult: false } }).then(r => r.data);
 };
 
-const trending = (mediaType, timeWindow) =>
-  tmdb.get(`/trending/${mediaType}/${timeWindow}`).then(r => r.data);
+const trending = (mediaType, timeWindow, page = 1) =>
+  tmdb.get(`/trending/${mediaType}/${timeWindow}`, { params: { page } }).then(r => r.data);
 
 const details = (base, id) =>
   tmdb.get(`/${base}/${id}`, { params: { append_to_response: 'credits' } }).then(r => r.data);

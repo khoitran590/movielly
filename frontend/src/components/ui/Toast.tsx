@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { Check, CircleAlert, X } from 'lucide-react';
 
 interface Toast {
@@ -17,18 +17,30 @@ const ToastContext = createContext<ToastContextValue>({ toast: () => {} });
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+
+  const dismiss = useCallback((id: string) => {
+    const timer = timers.current.get(id);
+    if (timer) clearTimeout(timer);
+    timers.current.delete(id);
+    setToasts((previous) => previous.filter((item) => item.id !== id));
+  }, []);
+
+  useEffect(() => () => {
+    timers.current.forEach((timer) => clearTimeout(timer));
+    timers.current.clear();
+  }, []);
 
   const toast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
-    const id = Math.random().toString(36).slice(2);
+    const id = crypto.randomUUID();
     setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500);
-  }, []);
+    timers.current.set(id, setTimeout(() => dismiss(id), 3500));
+  }, [dismiss]);
 
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      {/* Top-right so toasts never sit on the mobile dock. */}
-      <div className="fixed top-20 right-4 z-[100] flex flex-col gap-2" role="status" aria-live="polite">
+      <div className="fixed bottom-[var(--mobile-dock-clearance)] left-1/2 z-[100] flex -translate-x-1/2 flex-col gap-2 md:bottom-4 md:left-auto md:right-4 md:translate-x-0" role="status" aria-live="polite">
         {toasts.map(t => (
           <div
             key={t.id}
@@ -39,9 +51,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               : <CircleAlert className="w-4 h-4 shrink-0 text-ticket" />}
             <span>{t.message}</span>
             <button
-              onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}
+              onClick={() => dismiss(t.id)}
               aria-label="Dismiss"
-              className="ml-1 text-fog transition-colors hover:text-screen focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tungsten rounded-full"
+              className="focus-ring-raised ml-1 rounded-full text-fog transition-colors hover:text-screen"
             >
               <X className="w-4 h-4" />
             </button>

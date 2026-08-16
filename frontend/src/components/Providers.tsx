@@ -10,7 +10,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 60 * 1000,        // matches the backend's freshest cache tier
+            staleTime: 60 * 1000,        // default for user-owned and other live data
             refetchOnWindowFocus: false, // movie data doesn't change that fast
             retry: 1,
           },

@@ -17,13 +17,10 @@ interface PosterRailProps {
 
 const CARD_WIDTH = 'w-[132px] sm:w-[148px] md:w-[168px]';
 
-const focusRing =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tungsten focus-visible:ring-offset-2 focus-visible:ring-offset-ink';
-
 export function RailSkeleton({ title }: { title?: string }) {
   return (
     <section className="space-y-3">
-      {title && <h2 className="text-[15px] font-semibold text-screen">{title}</h2>}
+      {title && <h2 className="text-body font-semibold text-screen">{title}</h2>}
       <div className="flex gap-3 overflow-hidden sm:gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className={`${CARD_WIDTH} shrink-0 aspect-[2/3] animate-pulse rounded-poster bg-velvet`} />
@@ -51,14 +48,14 @@ export default function PosterRail({ title, movies, href, onViewAll, loading = f
   return (
     <section className="group/rail relative space-y-3">
       <div className="flex items-baseline justify-between gap-4">
-        <h2 className="text-[15px] font-semibold text-screen">{title}</h2>
+        <h2 className="text-body font-semibold text-screen">{title}</h2>
         {href && (
-          <Link href={href} className={`rounded-full text-ui text-fog transition-colors hover:text-screen ${focusRing}`}>
+          <Link href={href} className="focus-ring rounded-full text-ui text-fog transition-colors hover:text-screen">
             View all →
           </Link>
         )}
         {!href && onViewAll && (
-          <button onClick={onViewAll} className={`rounded-full text-ui text-fog transition-colors hover:text-screen ${focusRing}`}>
+          <button onClick={onViewAll} className="focus-ring rounded-full text-ui text-fog transition-colors hover:text-screen">
             View all →
           </button>
         )}
@@ -84,7 +81,7 @@ export default function PosterRail({ title, movies, href, onViewAll, loading = f
             type="button"
             onClick={() => scrollBy(side === 'right' ? 1 : -1)}
             aria-label={`Scroll ${title} ${side}`}
-            className={`absolute ${side === 'left' ? 'left-0 -translate-x-1/2' : 'right-0 translate-x-1/2'} top-[38%] z-[3] hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-rail bg-ink/90 text-screen opacity-0 transition-opacity hover:bg-seat group-hover/rail:opacity-100 focus-visible:opacity-100 [@media(pointer:fine)]:flex ${focusRing}`}
+            className={`focus-ring absolute ${side === 'left' ? 'left-0 -translate-x-1/2' : 'right-0 translate-x-1/2'} top-[42%] z-[3] hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-rail bg-ink/90 text-screen opacity-0 transition-opacity hover:bg-seat group-hover/rail:opacity-100 focus-visible:opacity-100 [@media(pointer:fine)]:flex`}
           >
             {side === 'left' ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>

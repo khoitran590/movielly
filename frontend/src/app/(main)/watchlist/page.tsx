@@ -16,14 +16,12 @@ import { PageSpinner } from '@/components/ui/Spinner';
 export default function WatchedPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const { items, refetch } = useWatchlist();
+  const { items } = useWatchlist();
   const { byMovieId: reviewsByMovie } = useMyReviews();
 
   useEffect(() => {
     if (!loading && !user) router.push('/login');
   }, [user, loading, router]);
-
-  useEffect(() => { refetch(); }, []);
 
   if (loading || !user) return <PageSpinner />;
 
