@@ -28,7 +28,7 @@ function Row({ entry }: { entry: FeedEntry }) {
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="text-ui text-screen">
+        <p className="break-words text-ui text-screen">
           <Link href={`/user/${entry.profile.id}`} className="focus-ring rounded font-medium hover:underline">
             @{name}
           </Link>{' '}

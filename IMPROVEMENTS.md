@@ -54,7 +54,8 @@ low cost), **P2** (worthwhile), **P3** (nice-to-have / larger).
 
 ## 7. Mobile / responsive
 
-- [x] **Site-wide horizontal scroll on mobile.** No root `overflow-x` guard existed, so any stray overflow (shadows/rings/sub-pixel, the centered fixed dock on narrow phones) scrolled the whole viewport on every page. Added `overflow-x: hidden` to `html` (keeps vertical scroll + sticky navbar) and `body` + `max-width: 100%` in `globals.css`; hardened the mobile dock (`tubelight-navbar`) with `max-w-[calc(100vw-1.5rem)]` + internal `overflow-x-auto`. All real content already lives in `max-w-7xl mx-auto px-5` wrappers, so nothing meaningful is clipped.
+- [x] **Site-wide horizontal scroll on mobile.** No root `overflow-x` guard existed, so any stray overflow scrolled the whole viewport. Added `overflow-x: hidden` to `html`/`body` + `max-width: 100%` in `globals.css`; hardened the mobile dock (`tubelight-navbar`) with `max-w-[calc(100vw-1.5rem)]` + internal `overflow-x-auto`.
+- [x] **Off-screen / clipped content on mobile (measured with Playwright @ 390px & 360px).** Found and fixed three real offenders that the guard was only clipping: (1) **Movie/TV detail** — `grid gap-10 lg:grid-cols-3` sized its implicit mobile track to *max-content* (988px), pushing overview/cast/facts off-screen; changed to `flex flex-col … lg:grid` + `min-w-0` on both columns. (2) **Activity feed** rows — long unbreakable names/titles overflowed; added `break-words`. (3) **Review cards** — header lacked `min-w-0`/`truncate`, so a long username shoved the star rating off-screen; added `min-w-0` + `truncate` + `shrink-0`. Verified **0 overflow offenders on every page** (home, search, movie, tv, auth, watchlist, favorites, settings, friends incl. Activity tab, user profile, share modal) at 390px and 360px with populated worst-case data.
 
 ## 6. Security / privacy
 

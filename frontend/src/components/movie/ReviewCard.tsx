@@ -29,7 +29,7 @@ export default function ReviewCard({ review, isOwn, onEdit, onDelete }: ReviewCa
   return (
     <article className="space-y-3 rounded-panel border border-rail bg-velvet p-4">
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-seat">
             {review.profiles?.avatar_url ? (
               <Image src={review.profiles.avatar_url} alt="" fill sizes="36px" className="object-cover" />
@@ -38,11 +38,11 @@ export default function ReviewCard({ review, isOwn, onEdit, onDelete }: ReviewCa
             )}
           </div>
           <div className="min-w-0">
-            <p className="text-ui font-medium text-screen">{username}</p>
+            <p className="truncate text-ui font-medium text-screen">{username}</p>
             <p className="font-mono text-caption text-fog">{timeAgo(review.created_at)}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <StarRating value={review.rating} readonly size="sm" />
           {isOwn && (
             <div className="ml-2 flex items-center gap-1">

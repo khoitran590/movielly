@@ -190,8 +190,8 @@ function TitleDetailContent({
 
       <div className="mx-auto max-w-7xl px-5 pb-16 sm:px-8">
         <div className="mb-8 lg:hidden"><WhereToWatch type={type} id={titleItem.id} /></div>
-        <div className="grid gap-10 lg:grid-cols-3">
-          <div className="space-y-10 lg:col-span-2">
+        <div className="flex flex-col gap-10 lg:grid lg:grid-cols-3">
+          <div className="min-w-0 space-y-10 lg:col-span-2">
             {titleItem.overview && (
               <section className="space-y-3">
                 <SectionHeading>Overview</SectionHeading>
@@ -208,7 +208,7 @@ function TitleDetailContent({
             />
           </div>
 
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             <div className="hidden lg:block"><WhereToWatch type={type} id={titleItem.id} /></div>
             <TitleFacts facts={adapter.facts(titleItem)} />
           </div>
