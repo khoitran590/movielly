@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Mail, Lock, User } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
+import { authErrorMessage } from '@/lib/authErrors';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import AuthShell from '@/components/auth/AuthShell';
@@ -30,7 +31,7 @@ export default function SignupPage() {
       options: { data: { username } },
     });
     setLoading(false);
-    if (error) { setError(error.message); return; }
+    if (error) { setError(authErrorMessage(error.message)); return; }
     setSuccess(true);
   };
 

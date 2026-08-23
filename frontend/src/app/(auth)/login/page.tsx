@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
+import { authErrorMessage } from '@/lib/authErrors';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import AuthShell from '@/components/auth/AuthShell';
@@ -23,7 +24,7 @@ export default function LoginPage() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (error) { setError(error.message); return; }
+    if (error) { setError(authErrorMessage(error.message)); return; }
     router.push('/');
     router.refresh();
   };

@@ -7,7 +7,8 @@ if (process.env.SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     tracesSampleRate: 0.1,
-    sendDefaultPii: true,
+    // Don't attach request bodies, headers, cookies, or user IP to events.
+    sendDefaultPii: false,
   });
 } else {
   console.warn('[Movielly] SENTRY_DSN not set — backend error reporting disabled');

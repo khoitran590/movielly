@@ -18,6 +18,19 @@ const TRAILER_CONCURRENCY = Number.isInteger(configuredConcurrency) && configure
   ? configuredConcurrency
   : 4;
 
+// Circuit-breaker bounds so a title with many mislabeled/removed videos can't
+// walk an unbounded list of 4s oEmbed checks. Cap the number of candidates we
+// probe, and put an overall deadline on the whole best-trailer resolution.
+const MAX_PLAYABILITY_CHECKS = Number(process.env.TRAILER_MAX_CHECKS) || 8;
+const TRAILER_DEADLINE_MS = Number(process.env.TRAILER_DEADLINE_MS) || 12000;
+
+// Resolves `promise`, or `fallback` if it doesn't settle within `ms`.
+function withDeadline(promise, ms, fallback) {
+  let timer;
+  const timeout = new Promise(resolve => { timer = setTimeout(() => resolve(fallback), ms); });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 // KinoCheck: human-curated trailer picks by TMDB id (anonymous: 1000 req/day).
 const kinocheck = axios.create({
   baseURL: process.env.KINOCHECK_BASE_URL || 'https://api.kinocheck.com',
@@ -50,9 +63,12 @@ const isPlayable = async (videoId) => (await getPlayableTitle(videoId)) !== null
 // only way to keep clips from those sources out.
 async function firstPlayable(candidates) {
   const seen = new Set();
+  let checks = 0;
   for (const c of candidates) {
     if (!c?.youtube_video_id || seen.has(c.youtube_video_id)) continue;
     seen.add(c.youtube_video_id);
+    if (checks >= MAX_PLAYABILITY_CHECKS) break;
+    checks++;
     const ytTitle = await getPlayableTitle(c.youtube_video_id);
     if (ytTitle === null) continue;
     if (c.untyped && !/trailer|teaser/i.test(ytTitle)) continue;
@@ -100,24 +116,30 @@ async function movieTrailerCandidates(type, tmdbId) {
 // the controller can map them (e.g. unknown id -> 404).
 async function getBestTrailer(type, tmdbId) {
   const endpoint = type === 'tv' ? `/tv/${tmdbId}/videos` : `/movie/${tmdbId}/videos`;
+  // TMDB request errors propagate (so the controller can map a bad id to 404);
+  // only the external playability resolution is bounded by the deadline.
   const { data } = await tmdb.get(endpoint);
 
-  const ranked = rankYouTube(data?.results).map(v => ({
-    youtube_video_id: v.key,
-    title: v.name || 'Trailer',
-    source: 'tmdb',
-  }));
+  const resolve = async () => {
+    const ranked = rankYouTube(data?.results).map(v => ({
+      youtube_video_id: v.key,
+      title: v.name || 'Trailer',
+      source: 'tmdb',
+    }));
 
-  // Cheap path first: if a ranked TMDB trailer plays, use it.
-  const fromTmdb = await firstPlayable(ranked);
-  if (fromTmdb) return fromTmdb;
+    // Cheap path first: if a ranked TMDB trailer plays, use it.
+    const fromTmdb = await firstPlayable(ranked);
+    if (fromTmdb) return fromTmdb;
 
-  // Fallbacks: KinoCheck's curated pick, then movie-trailer's suggestions.
-  const [curated, extras] = await Promise.all([
-    kinocheckCandidate(type, tmdbId),
-    movieTrailerCandidates(type, tmdbId),
-  ]);
-  return firstPlayable([...curated, ...extras]);
+    // Fallbacks: KinoCheck's curated pick, then movie-trailer's suggestions.
+    const [curated, extras] = await Promise.all([
+      kinocheckCandidate(type, tmdbId),
+      movieTrailerCandidates(type, tmdbId),
+    ]);
+    return firstPlayable([...curated, ...extras]);
+  };
+
+  return withDeadline(resolve(), TRAILER_DEADLINE_MS, null);
 }
 
 // Same, but never throws — for batch lookups where one bad part shouldn't

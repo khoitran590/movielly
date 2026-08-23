@@ -17,45 +17,45 @@ low cost), **P2** (worthwhile), **P3** (nice-to-have / larger).
 ## 1. Testing & Quality
 
 - [x] **P1 — Frontend has zero tests.** ~~Add Vitest + React Testing Library.~~ Vitest stood up (`vitest.config.ts`, `npm test`/`test:watch` scripts) with a first suite covering the `lib/api.ts` adapters (`getMovieTitle`, `getYear`, `savedToMovie`) — 8 tests passing. _Next: extend to `lib/utils.ts` and the `useTitleList` membership cache (add RTL when component tests are needed)._
-- [ ] **P2 — Backend service tests missing on the fragile code.** `trailer.service.js` (YouTube oEmbed / KinoCheck / collection logic), `recommendation.service.js`, and `list.service.js` are untested. Add tests with axios mocked.
-- [ ] **P2 — No HTTP-level/integration tests.** Add `supertest` to cover route → controller → validation wiring (esp. `/api/lists/share` auth + rate limit).
-- [ ] **P3 — No backend linter.** Add ESLint to `backend/` to match the frontend's standard.
-- [ ] **P3 — CI.** GitHub Action running `lint` + `test` for both packages on PRs.
+- [x] **P2 — Backend service tests missing on the fragile code.** ~~`trailer.service.js` … untested.~~ The trailer service is now exercised end-to-end via `test/integration.test.js` (TMDB videos + YouTube oEmbed mocked with `nock`, asserting the first playable video is returned). _Pure ranking/cache logic was already covered._
+- [x] **P2 — No HTTP-level/integration tests.** ~~Add `supertest`~~ — `test/integration.test.js` (supertest + nock) covers health, search validation + proxy + cache MISS→HIT, genres, a TMDB 404 passthrough, and the trailer route. No network is hit.
+- [x] **P3 — No backend linter.** ~~Add ESLint to `backend/`~~ — flat `eslint.config.js` (Node/CommonJS) + `npm run lint`, clean.
+- [x] **P3 — CI.** ~~GitHub Action~~ — `.github/workflows/ci.yml`: backend (lint + test) and frontend (lint + type-scale + test + build) jobs on push/PR to `main`.
 
 ## 2. Backend — fixes & improvements
 
 - [x] **P1 — Validate `POST /api/lists/share` body.** ~~`req.body.title` is read with no type/length check~~ — `lists.controller.js` now rejects non-string titles (400), trims, and caps at 100 chars before it reaches Supabase.
-- [ ] **P2 — Review Sentry `sendDefaultPii: true`.** Captures request/user data; confirm that's intended for privacy, otherwise disable.
-- [ ] **P2 — Shared cache for serverless.** In-memory TTL cache only survives per warm instance. Consider Upstash/Redis (or lean fully on the existing CDN headers) so cold serverless invocations aren't slow.
-- [ ] **P2 — Timeout/circuit-breaker around trailer resolution.** The trailer path walks many external candidates (TMDB videos + per-candidate YouTube oEmbed + KinoCheck) with no total cap; bound total work / add a fast-fail.
-- [ ] **P3 — Request logging/observability** beyond `console.error` (structured logs, e.g. pino).
-- [ ] **P3 — Confirm `.env` is gitignored** (appears untracked; verify explicitly).
+- [x] **P2 — Review Sentry `sendDefaultPii: true`.** ~~Captures request/user data~~ — set to `false` in `instrument.js` (no request bodies/headers/cookies/IP attached to events).
+- [ ] **P2 — Shared cache for serverless.** _Deferred by decision:_ we lean on the already-implemented dual CDN headers (`Vercel-CDN-Cache-Control` + `stale-while-revalidate`/`stale-if-error` in `lib/cache.js`) as the serverless-durable layer; in-memory stays the warm-instance fast path. Adding Upstash/Redis needs external infra + credentials — revisit only if CDN caching proves insufficient.
+- [x] **P2 — Timeout/circuit-breaker around trailer resolution.** ~~no total cap~~ — `trailer.service.js` now caps playability probes at `TRAILER_MAX_CHECKS` (8) and wraps the whole resolution in a `TRAILER_DEADLINE_MS` (12s) deadline that returns null instead of hanging. TMDB request errors still propagate for correct 404 mapping.
+- [x] **P3 — Request logging/observability.** ~~beyond `console.error`~~ — `pino` + `pino-http` (`lib/logger.js`), silent under tests; the global error handler now logs structured `{ err }`.
+- [x] **P3 — Confirm `.env` is gitignored.** Verified — root `.gitignore` ignores `.env`/`**/.env` (allowing `.env.example`); `backend/.env` is untracked.
 
 ## 3. Frontend — fixes & improvements
 
 - [x] **P1 — Migrate `user/[id]/page.tsx` to TanStack Query.** ~~It's the one page still on raw `useState`/`useEffect` + `Promise.all`~~ — now a single cached `useQuery` returning a discriminated `notfound | not-friends | ok` result; redirects kept as thin effects.
 - [x] **P1 — Stop swallowing mutation errors in `db.ts`.** ~~Several calls destructure only `data` and drop the Supabase `error`~~ — `watchlist`/`favorites` `add`/`remove` and `reviews.remove` now throw on error; `useTitleActions` catches and shows an error toast instead of silently succeeding.
 - [x] **P2 — `reviews.listForMovie` does an N-query manual profile join.** ~~Replace with a Supabase FK embed (single query).~~ Added FK `reviews.user_id → profiles(id)` (`supabase/reviews_profiles_fk.sql`) + the matching `Relationships` entry in `database.ts`; `listForMovie` now embeds `profiles(...)` in one round-trip. ⚠️ **Requires running `supabase/reviews_profiles_fk.sql` in the Supabase SQL editor before this code is deployed** — otherwise the embed query errors and the reviews section breaks.
-- [ ] **P2 — Friendlier auth error copy.** Auth pages surface raw Supabase `.message` strings; map to friendly messages.
+- [x] **P2 — Friendlier auth error copy.** ~~Auth pages surface raw Supabase `.message` strings~~ — new `lib/authErrors.ts` maps the common cases (bad credentials, already-registered, rate limit, expired link, …) with a safe fallback; applied to login/signup/forgot-password/reset-password.
 
 ## 4. New features
 
 - [x] **P2 — Friend-request notifications.** ~~A badge/indicator for incoming requests~~ — lightweight polled head-count (`friendships.pendingIncomingCount` + `useFriendRequestCount`, 60s interval) drives a `ticket`-colored badge on the Friends item in both the desktop `SideRail` and the mobile dock (`tubelight-navbar` gained a `badges` prop).
 - [x] **P2 — Activity / reviews feed.** ~~No feed exists~~ — `db.activity.forUser` merges friends' recent reviews + watched titles (newest first, capped at 50); surfaced via an **Activity/Friends tab** on `/friends` (`ActivityFeed.tsx`), so no new nav item and the mobile dock stays at 4 items.
 - [x] **P2 — Shared-list management UI.** ~~After creating a share link you can't rename or unshare it~~ — the Favorites "Share" flow now loads the existing list (`sharedLists.getMine`) and the modal supports rename-in-place (keeps the token) and stop-sharing (`updateTitle` / `remove`, owner-RLS client writes).
-- [ ] **P3 — Multiple custom lists** (beyond the single favorites-based share). Larger — needs a `lists` + `list_items` schema.
-- [ ] **P3 — Finish `StarRating` half-step / 5-star model** (plan item #12 — currently a single 1–10 slider path).
+- [ ] **P3 — Multiple custom lists** (beyond the single favorites-based share). _Deferred — its own project:_ needs new `lists` + `list_items` tables with RLS, a sharing model, and UI across create/edit/detail/share. Not folded into this sprint to avoid a fragile half-build; recommend a dedicated design pass.
+- [x] **P3 — `StarRating` half-step / 5-star model.** Already satisfied — `StarRating.tsx` renders **5 stars with half-star fill** and 10 click positions (each = half a star), stored as the DB's `1–10` integer. The half-step 5-star model is effectively in place; no change needed.
 
 ## 5. Housekeeping / tech debt
 
 - [x] **P1 — Delete or `noindex` the sandbox routes.** ~~`app/aurora`, `app/beams`, `app/lamp`, `app/liquid-glass`, `app/sentry-example-page` still ship publicly.~~ Their `page.tsx` files were already gone; removed the leftover empty directories. (No `addVariablesForColors`/unused color plugin present in `tailwind.config.ts`.)
-- [ ] **P2 — Consolidate search into one `SearchBar` used on every route** (plan item #5 — verify the two implementations, unify with a `variant` prop). Search is currently confined to the home route's `?q=`.
-- [ ] **P3 — Enforce the type scale** (plan item #11). The `check:type-scale` script exists; fix remaining hardcoded `text-[Npx]` literals so it passes clean.
+- [x] **P2 — Consolidate search into one `SearchBar` used on every route.** Already done — a single `components/search/SearchBar.tsx` is mounted in the global `Navbar` (part of `SiteChrome`), so search is available on every `(main)` route and navigates to `/?q=`. No duplicate implementation remains.
+- [x] **P3 — Enforce the type scale.** `npm run check:type-scale` passes clean; the CI workflow now runs it on every push/PR to keep it that way. (New badge/feed styles use scale tokens, not `text-[Npx]`.)
 
 ## 6. Security / privacy
 
-- [ ] **P2 — Service-role key has no RLS safety net.** `getSharedList` correctly scopes by `user_id`; document that any *future* list endpoints must enforce authorization in code since the backend bypasses RLS.
-- [ ] **P3 — Rate-limit story for authenticated writes.** Only `/share` has a strict limiter; consider per-user limits if more write endpoints are added.
+- [x] **P2 — Service-role key has no RLS safety net.** ~~document that future endpoints must enforce authz in code~~ — added a prominent SECURITY comment to `backend/src/lib/supabase.js` spelling out that the service-role client bypasses RLS and every user-scoped query must authorize in code.
+- [x] **P3 — Rate-limit story for authenticated writes.** Reviewed — the only authenticated *backend* write is `POST /api/lists/share`, which already has a strict 10/15-min limiter; all other user writes go straight to Supabase under RLS. Documented here; add per-user limits alongside any new authenticated write endpoint.
 
 ---
 
@@ -82,3 +82,20 @@ All four P2 features landed; `tsc`, lint (0 errors), type-scale guard, tests, an
 > ⚠️ **Action required before deploying Sprint 2:** run `supabase/reviews_profiles_fk.sql`
 > in the Supabase SQL editor. It adds the `reviews → profiles` FK the embedded
 > `reviews.listForMovie` query depends on. (The activity feed does not depend on it.)
+> ✅ Applied by the user on 2026-08-23.
+
+## Sprint 3 — ✅ complete (all remaining tractable items)
+
+Backend hardening & quality (Sentry PII off, trailer circuit-breaker, pino logging,
+ESLint, supertest+nock integration tests, CI, service-role RLS doc) and frontend polish
+(friendlier auth errors). Verified: backend **29 tests** + lint clean; frontend **15 tests**,
+tsc, lint (0 errors), type-scale, and `next build` all green.
+
+**Two items intentionally deferred (not code-cleanups — they need their own scope):**
+- **Multiple custom lists** — a feature project (new `lists`/`list_items` schema + RLS +
+  UI). Recommend a dedicated design pass rather than a rushed half-build.
+- **Shared Redis/Upstash cache** — needs external infra + credentials. Decision: rely on
+  the existing CDN cache headers as the serverless-durable layer; revisit if insufficient.
+
+Also confirmed already-satisfied and marked done: 5-star half-step rating, single global
+search bar, and the type-scale guard.

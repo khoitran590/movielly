@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Mail } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
+import { authErrorMessage } from '@/lib/authErrors';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import AuthShell from '@/components/auth/AuthShell';
@@ -23,7 +24,7 @@ export default function ForgotPasswordPage() {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     setLoading(false);
-    if (error) { setError(error.message); return; }
+    if (error) { setError(authErrorMessage(error.message)); return; }
     setSent(true);
   };
 

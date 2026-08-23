@@ -4,7 +4,9 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const pinoHttp = require('pino-http');
 
+const logger = require('./lib/logger');
 const moviesRouter = require('./routes/movies');
 const listsRouter = require('./routes/lists');
 
@@ -28,6 +30,8 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json({ limit: '16kb' }));
+// Per-request structured logging (attaches req.log for handlers).
+app.use(pinoHttp({ logger }));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -48,7 +52,7 @@ app.get('/api/health', (req, res) => {
 Sentry.setupExpressErrorHandler(app);
 
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  (req.log || logger).error({ err }, 'Unhandled request error');
   res.status(500).json({ error: 'Internal server error' });
 });
 
