@@ -74,16 +74,18 @@ const titleList = (table: TitleListTable) => ({
   },
 
   add: async (userId: string, item: Omit<TitleListItem, 'id' | 'user_id' | 'added_at'>): Promise<TitleListItem | null> => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from(table)
       .insert({ ...item, user_id: userId })
       .select(TITLE_LIST_COLUMNS)
       .single();
+    if (error) throw error;
     return (data as TitleListItem | null) ?? null;
   },
 
   remove: async (userId: string, movieId: number): Promise<void> => {
-    await supabase.from(table).delete().eq('user_id', userId).eq('movie_id', movieId);
+    const { error } = await supabase.from(table).delete().eq('user_id', userId).eq('movie_id', movieId);
+    if (error) throw error;
   },
 });
 
@@ -93,25 +95,17 @@ export const favorites = titleList('favorites');
 // ── Reviews ─────────────────────────────────────────────────────────────────
 
 export const reviews = {
-  // Author profiles are fetched separately and merged in (there is no FK
-  // between reviews and profiles for PostgREST to embed on).
+  // Author profile is embedded via the reviews.user_id -> profiles(id) FK
+  // (see supabase/reviews_profiles_fk.sql) so this is a single round-trip.
   listForMovie: async (movieId: number): Promise<Review[]> => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('reviews')
-      .select(REVIEW_COLUMNS)
+      .select(`${REVIEW_COLUMNS}, profiles(username, avatar_url, bio)`)
       .eq('movie_id', movieId)
       .order('created_at', { ascending: false })
       .limit(REVIEW_LIMIT);
-
-    const rows = (data as Review[]) || [];
-    const userIds = [...new Set(rows.map(r => r.user_id))];
-    if (!userIds.length) return rows;
-
-    const profs = await profiles.getMany(userIds);
-    const profileMap = Object.fromEntries(
-      profs.map(p => [p.id, { username: p.username, avatar_url: p.avatar_url, bio: p.bio }])
-    );
-    return rows.map(r => ({ ...r, profiles: profileMap[r.user_id] || null }));
+    if (error) throw error;
+    return (data as unknown as Review[]) || [];
   },
 
   // Every review the user has written (newest first) — used by the
@@ -141,7 +135,8 @@ export const reviews = {
   },
 
   remove: async (userId: string, movieId: number): Promise<void> => {
-    await supabase.from('reviews').delete().eq('user_id', userId).eq('movie_id', movieId);
+    const { error } = await supabase.from('reviews').delete().eq('user_id', userId).eq('movie_id', movieId);
+    if (error) throw error;
   },
 };
 
@@ -198,6 +193,17 @@ export const friendships = {
     const { error } = await supabase.from('friendships').delete().eq('id', friendshipId);
     return { error };
   },
+
+  // Lightweight count of incoming pending requests — powers the nav badge
+  // without pulling every relationship + profile.
+  pendingIncomingCount: async (userId: string): Promise<number> => {
+    const { count } = await supabase
+      .from('friendships')
+      .select('id', { count: 'exact', head: true })
+      .eq('addressee_id', userId)
+      .eq('status', 'pending');
+    return count ?? 0;
+  },
 };
 
 // ── Shared lists ────────────────────────────────────────────────────────────
@@ -218,6 +224,91 @@ export const sharedLists = {
       .select('user_id, share_token')
       .in('user_id', userIds);
     return data || [];
+  },
+
+  // The signed-in user's own shared list (token + title), or null if unshared.
+  getMine: async (userId: string): Promise<{ share_token: string; title: string } | null> => {
+    const { data } = await supabase
+      .from('shared_lists')
+      .select('share_token, title')
+      .eq('user_id', userId)
+      .maybeSingle();
+    return data ? { share_token: data.share_token, title: data.title ?? 'My Favorites' } : null;
+  },
+
+  // Rename in place — keeps the existing share token so the link stays valid.
+  updateTitle: async (userId: string, title: string) => {
+    const { error } = await supabase
+      .from('shared_lists')
+      .update({ title })
+      .eq('user_id', userId);
+    return { error };
+  },
+
+  // Stop sharing — removes the row (RLS allows owners to manage their own).
+  remove: async (userId: string) => {
+    const { error } = await supabase.from('shared_lists').delete().eq('user_id', userId);
+    return { error };
+  },
+};
+
+// ── Activity feed (friends' recent reviews & watched titles) ─────────────────
+
+export const activity = {
+  forUser: async (userId: string): Promise<import('@/types').FeedEntry[]> => {
+    const rows = await friendships.listFor(userId);
+    const friendIds = rows
+      .filter(r => r.status === 'accepted')
+      .map(r => (r.requester_id === userId ? r.addressee_id : r.requester_id));
+    if (!friendIds.length) return [];
+
+    const [reviewRes, watchedRes, profs] = await Promise.all([
+      supabase
+        .from('reviews')
+        .select('id, user_id, movie_id, movie_title, movie_poster, movie_type, rating, content, created_at')
+        .in('user_id', friendIds)
+        .order('created_at', { ascending: false })
+        .limit(40),
+      supabase
+        .from('watchlist')
+        .select(TITLE_LIST_COLUMNS)
+        .in('user_id', friendIds)
+        .order('added_at', { ascending: false })
+        .limit(40),
+      profiles.getMany(friendIds),
+    ]);
+
+    const profileMap = Object.fromEntries(profs.map(p => [p.id, p]));
+    const entries: import('@/types').FeedEntry[] = [];
+
+    for (const r of (reviewRes.data ?? []) as Review[]) {
+      entries.push({
+        kind: 'review',
+        id: `review-${r.id}`,
+        at: r.created_at,
+        profile: profileMap[r.user_id] ?? { id: r.user_id, username: 'Unknown', avatar_url: null },
+        movie_id: r.movie_id,
+        movie_title: r.movie_title,
+        movie_poster: r.movie_poster,
+        movie_type: r.movie_type,
+        rating: r.rating,
+        content: r.content,
+      });
+    }
+    for (const w of (watchedRes.data ?? []) as WatchlistItem[]) {
+      entries.push({
+        kind: 'watched',
+        id: `watched-${w.id}`,
+        at: w.added_at,
+        profile: profileMap[w.user_id] ?? { id: w.user_id, username: 'Unknown', avatar_url: null },
+        movie_id: w.movie_id,
+        movie_title: w.movie_title,
+        movie_poster: w.movie_poster,
+        movie_type: w.movie_type,
+      });
+    }
+
+    return entries.sort((a, b) => (a.at < b.at ? 1 : -1)).slice(0, 50);
   },
 };
 

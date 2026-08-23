@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { ChevronLeft, ChevronRight, LogIn, LogOut, Settings, User, UserPlus } from 'lucide-react';
 import { NAV_ITEMS } from '@/lib/nav';
 import { useAuth } from '@/context/AuthContext';
+import { useFriendRequestCount } from '@/hooks/useFriendRequestCount';
 import Wordmark from './Wordmark';
 
 export default function SideRail({
@@ -17,6 +18,7 @@ export default function SideRail({
 }) {
   const pathname = usePathname();
   const { user, username, avatarUrl, signOut } = useAuth();
+  const requestCount = useFriendRequestCount();
 
   return (
     <aside
@@ -39,6 +41,7 @@ export default function SideRail({
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const active = pathname === item.url;
+          const badge = item.url === '/friends' && requestCount > 0 ? requestCount : 0;
           return (
             <Link
               key={item.url}
@@ -50,8 +53,21 @@ export default function SideRail({
               } ${active ? 'text-screen' : 'text-fog hover:bg-seat hover:text-screen'}`}
             >
               {active && <span aria-hidden className="absolute -left-2 h-6 w-0.5 bg-tungsten" />}
-              <Icon className="h-[18px] w-[18px] shrink-0" aria-hidden />
+              <span className="relative shrink-0">
+                <Icon className="h-[18px] w-[18px]" aria-hidden />
+                {badge > 0 && (
+                  <span
+                    aria-hidden
+                    className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-ticket px-1 text-caption font-semibold leading-none text-ink"
+                  >
+                    {badge > 9 ? '9+' : badge}
+                  </span>
+                )}
+              </span>
               {expanded && <span className="text-ui font-medium">{item.name}</span>}
+              {badge > 0 && (
+                <span className="sr-only">{badge} pending friend {badge === 1 ? 'request' : 'requests'}</span>
+              )}
             </Link>
           );
         })}

@@ -12,6 +12,7 @@ import Button from '@/components/ui/Button';
 import EmptyState from '@/components/ui/EmptyState';
 import SectionHeading from '@/components/ui/SectionHeading';
 import { PageSpinner } from '@/components/ui/Spinner';
+import ActivityFeed from '@/components/friends/ActivityFeed';
 import type { FriendEntry } from '@/types';
 
 function Avatar({ entry }: { entry: FriendEntry }) {
@@ -34,6 +35,7 @@ export default function FriendsPage() {
   const { friends, incoming, outgoing, loading, addFriend, accept, remove } = useFriends();
   const [username, setUsername] = useState('');
   const [sending, setSending] = useState(false);
+  const [tab, setTab] = useState<'friends' | 'activity'>('friends');
   const usernameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -95,6 +97,29 @@ export default function FriendsPage() {
         )}
       </header>
 
+      <div role="tablist" aria-label="Friends views" className="flex gap-1 rounded-full border border-rail bg-velvet p-1">
+        {(['friends', 'activity'] as const).map(t => (
+          <button
+            key={t}
+            role="tab"
+            aria-selected={tab === t}
+            onClick={() => setTab(t)}
+            className={`focus-ring flex-1 rounded-full px-4 py-2 text-ui font-medium capitalize transition-colors ${
+              tab === t ? 'bg-seat text-screen' : 'text-fog hover:text-screen'
+            }`}
+          >
+            {t === 'activity' ? 'Activity' : 'Friends'}
+            {t === 'friends' && incoming.length > 0 && (
+              <span className="ml-1.5 font-mono text-meta text-ticket">{incoming.length}</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'activity' ? (
+        <ActivityFeed />
+      ) : (
+      <>
       <form onSubmit={handleAdd} className="flex items-center gap-2 rounded-full border border-rail bg-velvet p-1.5 pl-5">
         <UserPlus aria-hidden className="w-4 h-4 shrink-0 text-fog" />
         <input
@@ -181,6 +206,8 @@ export default function FriendsPage() {
             )))}
           </ul>
         </section>
+      )}
+      </>
       )}
     </div>
   );

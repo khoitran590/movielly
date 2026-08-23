@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { profiles, friendships, watchlist, sharedLists } from '@/lib/db';
 import { useAuth } from '@/context/AuthContext';
 import { savedToMovie } from '@/lib/api';
@@ -14,57 +15,60 @@ import EmptyState from '@/components/ui/EmptyState';
 import { PageSpinner } from '@/components/ui/Spinner';
 import type { WatchlistItem, FriendProfile } from '@/types';
 
-type View = 'loading' | 'ok' | 'not-friends' | 'notfound';
-
 // Guard: ids come from the URL and are interpolated into PostgREST .or() filters,
 // so reject anything that isn't a canonical UUID before querying.
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+type ProfileData =
+  | { view: 'notfound' }
+  | { view: 'not-friends'; profile: FriendProfile }
+  | { view: 'ok'; profile: FriendProfile; items: WatchlistItem[]; shareToken: string | null };
 
 export default function FriendProfilePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const [profile, setProfile] = useState<FriendProfile | null>(null);
-  const [items, setItems] = useState<WatchlistItem[]>([]);
-  const [shareToken, setShareToken] = useState<string | null>(null);
-  const [view, setView] = useState<View>('loading');
+
+  const isValidId = !!id && UUID_RE.test(id);
+  const isSelf = !!user && user.id === id;
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (!user || !id) return;
-    if (!UUID_RE.test(id)) { setView('notfound'); return; }
-    if (user.id === id) { router.replace('/watchlist'); return; }
+    if (isSelf) router.replace('/watchlist');
+  }, [isSelf, router]);
 
-    let active = true;
-    (async () => {
-      setView('loading');
+  const { data, isPending } = useQuery({
+    queryKey: ['friend-profile', user?.id, id],
+    enabled: !!user && isValidId && !isSelf,
+    queryFn: async (): Promise<ProfileData> => {
       const [prof, friendship] = await Promise.all([
         profiles.get(id),
-        friendships.acceptedBetween(user.id, id),
+        friendships.acceptedBetween(user!.id, id),
       ]);
-      if (!active) return;
-      if (!prof) { setView('notfound'); return; }
-      setProfile(prof);
-
-      if (!friendship) { setView('not-friends'); return; }
+      if (!prof) return { view: 'notfound' };
+      if (!friendship) return { view: 'not-friends', profile: prof };
 
       const [wl, token] = await Promise.all([
         watchlist.list(id),
         sharedLists.getToken(id),
       ]);
-      if (!active) return;
-      setItems(wl as WatchlistItem[]);
-      setShareToken(token);
-      setView('ok');
-    })();
-    return () => { active = false; };
-  }, [user, id, router]);
+      return { view: 'ok', profile: prof, items: wl as WatchlistItem[], shareToken: token };
+    },
+  });
 
-  if (authLoading || !user || view === 'loading') return <PageSpinner />;
+  if (authLoading || !user || isSelf) return <PageSpinner />;
 
+  // Invalid ids never hit the query — render not-found directly.
+  const result: ProfileData = isValidId
+    ? (data ?? { view: 'notfound' })
+    : { view: 'notfound' };
+
+  if (isValidId && isPending) return <PageSpinner />;
+
+  const profile = result.view === 'notfound' ? null : result.profile;
   const name = profile?.username || 'User';
   const initial = name[0]?.toUpperCase() || '?';
 
@@ -85,13 +89,13 @@ export default function FriendProfilePage() {
         <div className="min-w-0">
           <h1 className="font-display text-display-md text-screen">@{name}</h1>
           {profile?.bio && <p className="mt-1 line-clamp-2 text-body text-fog">{profile.bio}</p>}
-          {view === 'ok' && (
-            <p className="mt-1 font-mono text-meta text-fog">{items.length} watched</p>
+          {result.view === 'ok' && (
+            <p className="mt-1 font-mono text-meta text-fog">{result.items.length} watched</p>
           )}
         </div>
-        {view === 'ok' && shareToken && (
+        {result.view === 'ok' && result.shareToken && (
           <Link
-            href={`/list/${shareToken}`}
+            href={`/list/${result.shareToken}`}
             className="focus-ring ml-auto rounded-full border border-rail px-4 py-2 text-ui font-semibold text-screen transition-colors hover:border-screen"
           >
             Their favorites
@@ -99,11 +103,11 @@ export default function FriendProfilePage() {
         )}
       </header>
 
-      {view === 'notfound' && (
+      {result.view === 'notfound' && (
         <EmptyState title="No one by that name." actionLabel="Back to friends" actionHref="/friends" />
       )}
 
-      {view === 'not-friends' && (
+      {result.view === 'not-friends' && (
         <EmptyState
           title="This log is private."
           description={`You and @${name} aren’t friends.`}
@@ -112,12 +116,12 @@ export default function FriendProfilePage() {
         />
       )}
 
-      {view === 'ok' && (
-        items.length === 0 ? (
+      {result.view === 'ok' && (
+        result.items.length === 0 ? (
           <EmptyState title={`@${name} hasn’t watched anything yet.`} actionLabel="Back to friends" actionHref="/friends" />
         ) : (
           <div className={GRID_CLASS}>
-            {items.map(item => (
+            {result.items.map(item => (
               <MovieCard key={item.id} movie={savedToMovie(item)} />
             ))}
           </div>

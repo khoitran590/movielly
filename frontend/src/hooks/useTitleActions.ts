@@ -31,23 +31,31 @@ export function useTitleActions(movie: Movie) {
 
   const toggleWatchlist = useCallback(async () => {
     if (!user) { router.push('/login'); return; }
-    if (inWatchlist) {
-      await watchlist.remove(movie.id);
-      toast(`Removed ${title} from Watched`);
-    } else {
-      await watchlist.add(payload);
-      toast(`Marked ${title} as watched`);
+    try {
+      if (inWatchlist) {
+        await watchlist.remove(movie.id);
+        toast(`Removed ${title} from Watched`);
+      } else {
+        await watchlist.add(payload);
+        toast(`Marked ${title} as watched`);
+      }
+    } catch {
+      toast(`Couldn’t update Watched — please try again`);
     }
   }, [inWatchlist, movie.id, payload, router, title, toast, user, watchlist]);
 
   const toggleFavorite = useCallback(async () => {
     if (!user) { router.push('/login'); return; }
-    if (inFavorites) {
-      await favorites.remove(movie.id);
-      toast(`Removed ${title} from Favorites`);
-    } else {
-      await favorites.add(payload);
-      toast(`Added ${title} to Favorites`);
+    try {
+      if (inFavorites) {
+        await favorites.remove(movie.id);
+        toast(`Removed ${title} from Favorites`);
+      } else {
+        await favorites.add(payload);
+        toast(`Added ${title} to Favorites`);
+      }
+    } catch {
+      toast(`Couldn’t update Favorites — please try again`);
     }
   }, [favorites, inFavorites, movie.id, payload, router, title, toast, user]);
 

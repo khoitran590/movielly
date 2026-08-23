@@ -91,7 +91,15 @@ export type Database = {
           created_at?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'reviews_user_id_profiles_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       watchlist: {
         Row: TitleListRow;

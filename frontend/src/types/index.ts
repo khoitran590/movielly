@@ -109,6 +109,21 @@ export interface FriendEntry {
   shareToken?: string | null;
 }
 
+// One item in the friends activity feed: a friend either reviewed or watched a title.
+interface FeedEntryBase {
+  id: string;
+  at: string;
+  profile: FriendProfile;
+  movie_id: number;
+  movie_title: string;
+  movie_poster: string | null;
+  movie_type: 'movie' | 'tv';
+}
+
+export type FeedEntry =
+  | (FeedEntryBase & { kind: 'review'; rating: number; content: string | null })
+  | (FeedEntryBase & { kind: 'watched' });
+
 export interface TrailerItem {
   youtube_video_id: string;
   label: string;

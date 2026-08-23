@@ -15,11 +15,13 @@ interface NavItem {
 interface NavBarProps {
   items: readonly NavItem[]
   className?: string
+  // Badge counts keyed by item url (e.g. pending friend requests).
+  badges?: Record<string, number>
 }
 
 // Mobile dock. A quiet ink track with a tungsten underline on the active item —
 // no tubelight halo, no brand glow.
-export function NavBar({ items, className }: NavBarProps) {
+export function NavBar({ items, className, badges }: NavBarProps) {
   const pathname = usePathname()
 
   return (
@@ -31,6 +33,7 @@ export function NavBar({ items, className }: NavBarProps) {
         {items.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.url
+          const badge = badges?.[item.url] ?? 0
 
           return (
             <Link
@@ -43,7 +46,17 @@ export function NavBar({ items, className }: NavBarProps) {
                 isActive ? "text-screen" : "text-fog hover:text-screen",
               )}
             >
-              <Icon size={18} strokeWidth={2} aria-hidden />
+              <span className="relative">
+                <Icon size={18} strokeWidth={2} aria-hidden />
+                {badge > 0 && (
+                  <span
+                    aria-hidden
+                    className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-ticket px-1 text-caption font-semibold leading-none text-ink"
+                  >
+                    {badge > 9 ? "9+" : badge}
+                  </span>
+                )}
+              </span>
               <span className="text-caption font-medium leading-none">{item.name}</span>
               {isActive && (
                 <span
