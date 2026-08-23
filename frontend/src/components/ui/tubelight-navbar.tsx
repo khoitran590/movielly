@@ -27,9 +27,12 @@ export function NavBar({ items, className, badges }: NavBarProps) {
   return (
     <nav
       aria-label="Sections"
-      className={cn("fixed bottom-[var(--mobile-dock-offset)] left-1/2 z-50 -translate-x-1/2", className)}
+      className={cn(
+        "fixed bottom-[var(--mobile-dock-offset)] left-1/2 z-50 -translate-x-1/2 max-w-[calc(100vw-1.5rem)]",
+        className,
+      )}
     >
-      <div className="glass flex items-center gap-1 rounded-full p-1.5">
+      <div className="glass no-scrollbar flex items-center gap-1 overflow-x-auto rounded-full p-1.5">
         {items.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.url

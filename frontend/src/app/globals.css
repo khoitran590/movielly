@@ -28,6 +28,10 @@
   html {
     scroll-behavior: smooth;
     background-color: #0B0A09;
+    /* Guard against sideways scroll on mobile from any stray overflow. Applied
+       to the scroller so overflow-y computes to auto — vertical scroll (and the
+       sticky navbar) stay intact. */
+    overflow-x: hidden;
   }
 
   body {
@@ -37,6 +41,8 @@
       radial-gradient(1200px 600px at 50% -10%, rgba(224, 168, 74, 0.06), transparent 60%),
       #0B0A09;
     @apply font-sans text-screen antialiased;
+    overflow-x: hidden;
+    max-width: 100%;
   }
 
   ::-webkit-scrollbar {

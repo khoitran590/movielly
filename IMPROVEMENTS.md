@@ -52,6 +52,10 @@ low cost), **P2** (worthwhile), **P3** (nice-to-have / larger).
 - [x] **P2 — Consolidate search into one `SearchBar` used on every route.** Already done — a single `components/search/SearchBar.tsx` is mounted in the global `Navbar` (part of `SiteChrome`), so search is available on every `(main)` route and navigates to `/?q=`. No duplicate implementation remains.
 - [x] **P3 — Enforce the type scale.** `npm run check:type-scale` passes clean; the CI workflow now runs it on every push/PR to keep it that way. (New badge/feed styles use scale tokens, not `text-[Npx]`.)
 
+## 7. Mobile / responsive
+
+- [x] **Site-wide horizontal scroll on mobile.** No root `overflow-x` guard existed, so any stray overflow (shadows/rings/sub-pixel, the centered fixed dock on narrow phones) scrolled the whole viewport on every page. Added `overflow-x: hidden` to `html` (keeps vertical scroll + sticky navbar) and `body` + `max-width: 100%` in `globals.css`; hardened the mobile dock (`tubelight-navbar`) with `max-w-[calc(100vw-1.5rem)]` + internal `overflow-x-auto`. All real content already lives in `max-w-7xl mx-auto px-5` wrappers, so nothing meaningful is clipped.
+
 ## 6. Security / privacy
 
 - [x] **P2 — Service-role key has no RLS safety net.** ~~document that future endpoints must enforce authz in code~~ — added a prominent SECURITY comment to `backend/src/lib/supabase.js` spelling out that the service-role client bypasses RLS and every user-scoped query must authorize in code.
