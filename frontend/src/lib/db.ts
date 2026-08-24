@@ -4,12 +4,12 @@
 // src/types/database.ts.
 import { createClient } from './supabase';
 import type { WatchlistItem, FavoriteItem, Review, FriendProfile } from '@/types';
+import type { TitleType } from './titleIdentity';
 
 const supabase = createClient();
-const TITLE_LIST_LIMIT = 250;
-const REVIEW_LIMIT = 100;
 const FRIENDSHIP_LIMIT = 200;
-const TITLE_LIST_COLUMNS = 'id, user_id, movie_id, movie_title, movie_poster, movie_type, added_at';
+const WATCHLIST_COLUMNS = 'id, user_id, movie_id, movie_title, movie_poster, movie_type, added_at, title_status, watched_at';
+const FAVORITE_COLUMNS = 'id, user_id, movie_id, movie_title, movie_poster, movie_type, added_at';
 const REVIEW_COLUMNS = 'id, user_id, movie_id, movie_title, movie_poster, movie_type, rating, content, created_at, updated_at';
 const FRIENDSHIP_COLUMNS = 'id, requester_id, addressee_id, status, created_at, updated_at';
 
@@ -25,19 +25,21 @@ export interface FriendshipRow {
 
 export const profiles = {
   get: async (id: string): Promise<FriendProfile | null> => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('id, username, avatar_url, bio')
       .eq('id', id)
       .maybeSingle();
+    if (error) throw error;
     return data;
   },
 
   getMany: async (ids: string[]): Promise<FriendProfile[]> => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('id, username, avatar_url, bio')
       .in('id', ids);
+    if (error) throw error;
     return data || [];
   },
 
@@ -64,46 +66,88 @@ type TitleListItem = WatchlistItem | FavoriteItem;
 
 const titleList = (table: TitleListTable) => ({
   list: async (userId: string): Promise<TitleListItem[]> => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from(table)
-      .select(TITLE_LIST_COLUMNS)
+      .select(table === 'watchlist' ? WATCHLIST_COLUMNS : FAVORITE_COLUMNS)
       .eq('user_id', userId)
-      .order('added_at', { ascending: false })
-      .limit(TITLE_LIST_LIMIT);
-    return (data as TitleListItem[]) || [];
+      .order('added_at', { ascending: false });
+    if (error) throw error;
+    return (data as unknown as TitleListItem[]) || [];
   },
 
   add: async (userId: string, item: Omit<TitleListItem, 'id' | 'user_id' | 'added_at'>): Promise<TitleListItem | null> => {
     const { data, error } = await supabase
       .from(table)
       .insert({ ...item, user_id: userId })
-      .select(TITLE_LIST_COLUMNS)
+      .select(table === 'watchlist' ? WATCHLIST_COLUMNS : FAVORITE_COLUMNS)
       .single();
     if (error) throw error;
-    return (data as TitleListItem | null) ?? null;
+    return (data as unknown as TitleListItem | null) ?? null;
   },
 
-  remove: async (userId: string, movieId: number): Promise<void> => {
-    const { error } = await supabase.from(table).delete().eq('user_id', userId).eq('movie_id', movieId);
+  remove: async (userId: string, movieType: TitleType, movieId: number): Promise<void> => {
+    const { error } = await supabase.from(table).delete().eq('user_id', userId).eq('movie_type', movieType).eq('movie_id', movieId);
     if (error) throw error;
   },
 });
 
-export const watchlist = titleList('watchlist');
+export const watchlist = {
+  ...titleList('watchlist'),
+  updateStatus: async (userId: string, movieType: TitleType, movieId: number, status: 'planned' | 'watched') => {
+    const { error } = await supabase
+      .from('watchlist')
+      .update({ title_status: status, watched_at: status === 'watched' ? new Date().toISOString() : null })
+      .eq('user_id', userId)
+      .eq('movie_type', movieType)
+      .eq('movie_id', movieId);
+    if (error) throw error;
+  },
+};
 export const favorites = titleList('favorites');
+
+// ── Availability preferences ──────────────────────────────────────────────
+
+export const preferences = {
+  get: async (userId: string) => {
+    const { data, error } = await supabase
+      .from('user_preferences')
+      .select('region, preferred_provider_ids, updated_at')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return { region: 'US', preferred_provider_ids: [] as number[], updated_at: null };
+    return {
+      region: data.region,
+      preferred_provider_ids: Array.isArray(data.preferred_provider_ids)
+        ? data.preferred_provider_ids.filter((id): id is number => typeof id === 'number')
+        : [],
+      updated_at: data.updated_at,
+    };
+  },
+
+  save: async (userId: string, region: string, preferredProviderIds: number[]) => {
+    const { error } = await supabase.from('user_preferences').upsert({
+      user_id: userId,
+      region,
+      preferred_provider_ids: preferredProviderIds,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) throw error;
+  },
+};
 
 // ── Reviews ─────────────────────────────────────────────────────────────────
 
 export const reviews = {
   // Author profile is embedded via the reviews.user_id -> profiles(id) FK
   // (see supabase/reviews_profiles_fk.sql) so this is a single round-trip.
-  listForMovie: async (movieId: number): Promise<Review[]> => {
+  listForMovie: async (movieType: TitleType, movieId: number): Promise<Review[]> => {
     const { data, error } = await supabase
       .from('reviews')
       .select(`${REVIEW_COLUMNS}, profiles(username, avatar_url, bio)`)
+      .eq('movie_type', movieType)
       .eq('movie_id', movieId)
-      .order('created_at', { ascending: false })
-      .limit(REVIEW_LIMIT);
+      .order('created_at', { ascending: false });
     if (error) throw error;
     return (data as unknown as Review[]) || [];
   },
@@ -111,12 +155,12 @@ export const reviews = {
   // Every review the user has written (newest first) — used by the
   // watchlist page to show "your review" under each title.
   listByUser: async (userId: string): Promise<Review[]> => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('reviews')
       .select(REVIEW_COLUMNS)
       .eq('user_id', userId)
-      .order('updated_at', { ascending: false })
-      .limit(REVIEW_LIMIT);
+      .order('updated_at', { ascending: false });
+    if (error) throw error;
     return (data as Review[]) || [];
   },
 
@@ -129,13 +173,13 @@ export const reviews = {
       .from('reviews')
       .upsert(
         { ...payload, user_id: userId, movie_id: movieId, updated_at: new Date().toISOString() },
-        { onConflict: 'user_id,movie_id' }
+        { onConflict: 'user_id,movie_type,movie_id' }
       );
     return { error };
   },
 
-  remove: async (userId: string, movieId: number): Promise<void> => {
-    const { error } = await supabase.from('reviews').delete().eq('user_id', userId).eq('movie_id', movieId);
+  remove: async (userId: string, movieType: TitleType, movieId: number): Promise<void> => {
+    const { error } = await supabase.from('reviews').delete().eq('user_id', userId).eq('movie_type', movieType).eq('movie_id', movieId);
     if (error) throw error;
   },
 };
@@ -271,12 +315,15 @@ export const activity = {
         .limit(40),
       supabase
         .from('watchlist')
-        .select(TITLE_LIST_COLUMNS)
+        .select(WATCHLIST_COLUMNS)
         .in('user_id', friendIds)
+        .eq('title_status', 'watched')
         .order('added_at', { ascending: false })
         .limit(40),
       profiles.getMany(friendIds),
     ]);
+    if (reviewRes.error) throw reviewRes.error;
+    if (watchedRes.error) throw watchedRes.error;
 
     const profileMap = Object.fromEntries(profs.map(p => [p.id, p]));
     const entries: import('@/types').FeedEntry[] = [];

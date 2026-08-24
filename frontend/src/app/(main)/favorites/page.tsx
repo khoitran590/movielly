@@ -19,7 +19,7 @@ import { PageSpinner } from '@/components/ui/Spinner';
 export default function FavoritesPage() {
   const { user, session, loading } = useAuth();
   const router = useRouter();
-  const { items } = useFavorites();
+  const { items, isLoading: listLoading, isError: listError, refetch: refetchFavorites } = useFavorites();
   const { toast } = useToast();
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -89,7 +89,7 @@ export default function FavoritesPage() {
     toast('Link copied');
   };
 
-  if (loading || !user) return <PageSpinner />;
+  if (loading || !user || listLoading) return <PageSpinner />;
 
   return (
     <div className="mx-auto max-w-7xl animate-fade-in space-y-8 px-5 py-8 sm:px-8">
@@ -107,7 +107,9 @@ export default function FavoritesPage() {
         )}
       </header>
 
-      {items.length === 0 ? (
+      {listError ? (
+        <EmptyState title="Your favorites are unavailable right now." description="Your saved titles are safe. Please try again." actionLabel="Try again" onAction={() => void refetchFavorites()} />
+      ) : items.length === 0 ? (
         <EmptyState title="No favorites yet." actionLabel="Browse titles" actionHref="/" />
       ) : (
         <div className={GRID_CLASS}>

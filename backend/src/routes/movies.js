@@ -20,6 +20,8 @@ router.get('/tv/:id', validateId, cacheResponse(60 * 60), ctrl.tvDetails);
 router.get('/popular', validateTypeAndPage, cacheResponse(30 * 60), ctrl.popular);
 router.get('/genres', validateGenreType, cacheResponse(24 * 60 * 60), ctrl.genres);
 router.get('/discover', validateDiscover, cacheResponse(30 * 60), ctrl.discover);
+router.get('/provider-regions', cacheResponse(7 * 24 * 60 * 60), ctrl.providerRegions);
+router.get('/provider-catalog', validateRegion, cacheResponse(24 * 60 * 60), ctrl.providerCatalog);
 router.get('/:type/:id/trailer', validateTypeAndId, cacheResponse(6 * 60 * 60), ctrl.trailer);
 router.get('/:type/:id/trailers', validateTypeAndId, cacheResponse(6 * 60 * 60), ctrl.trailers);
 router.get('/:type/:id/similar', validateTypeAndId, cacheResponse(6 * 60 * 60), ctrl.similar);

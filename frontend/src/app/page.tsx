@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useAuth } from '@/context/AuthContext';
 import { useWatchlist } from '@/context/WatchlistContext';
 import { useFavorites } from '@/context/FavoritesContext';
+import EmptyState from '@/components/ui/EmptyState';
 import type { Genre, Movie } from '@/types';
 
 type TypeFilter = 'all' | 'movie' | 'tv';
@@ -259,21 +260,21 @@ function HomeContent() {
     router.replace(next.size ? `/?${next.toString()}` : '/');
   };
 
-  const { data: trending = [], isPending: trendingLoading } = useQuery({
+  const { data: trending = [], isPending: trendingLoading, isError: trendingError, refetch: refetchTrending } = useQuery({
     queryKey: ['trending', 'week', 'all'],
     queryFn: async ({ signal }) => (await movieApi.trending('week', 'all', 1, signal)).results.filter((movie) => movie.media_type !== 'person'),
     enabled: !resultsMode,
     staleTime: QUERY_STALE_TIME.browse,
   });
 
-  const { data: popularFilms = [], isPending: filmsLoading } = useQuery({
+  const { data: popularFilms = [], isPending: filmsLoading, isError: filmsError, refetch: refetchFilms } = useQuery({
     queryKey: ['popular', 'movie'],
     queryFn: async ({ signal }) => (await movieApi.popular('movie', 1, signal)).results.map((movie) => ({ ...movie, media_type: 'movie' as const })),
     enabled: !resultsMode,
     staleTime: QUERY_STALE_TIME.browse,
   });
 
-  const { data: popularSeries = [], isPending: seriesLoading } = useQuery({
+  const { data: popularSeries = [], isPending: seriesLoading, isError: seriesError, refetch: refetchSeries } = useQuery({
     queryKey: ['popular', 'tv'],
     queryFn: async ({ signal }) => (await movieApi.popular('tv', 1, signal)).results.map((movie) => ({ ...movie, media_type: 'tv' as const })),
     enabled: !resultsMode,
@@ -366,6 +367,12 @@ function HomeContent() {
         : typeFilter === 'movie' ? 'Films'
           : 'Browse';
 
+  const retryHome = () => void Promise.all([refetchTrending(), refetchFilms(), refetchSeries()]);
+
+  if (!resultsMode && trendingError && filmsError && seriesError) {
+    return <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8"><EmptyState title="The marquee is dark for a moment." description="We couldn’t load the catalogue right now." actionLabel="Try again" onAction={retryHome} /></div>;
+  }
+
   return (
     <>
       {!resultsMode && (featured ? <NowShowing movie={featured} /> : (trendingLoading || filmsLoading) ? <NowShowingSkeleton /> : null)}
@@ -398,11 +405,18 @@ function HomeContent() {
               {year && <FilterChip label={year === 'older' ? `Before ${CURRENT_DECADE - 30}` : year} onRemove={() => updateParam('year', null)} />}
               {!query && sort !== 'popularity' && <FilterChip label={sort === 'rating_desc' ? 'Top rated' : 'Lowest rated'} onRemove={() => updateParam('sort', null)} />}
             </div>
+            {query && (genre || year) && (
+              <p className="text-meta text-fog">Genre and year refine the loaded search results. Try a more specific title if you don’t see a match.</p>
+            )}
           </div>
         )}
 
         {resultsMode ? (
           <div className="space-y-5">
+            {resultsQuery.isError ? (
+              <EmptyState title="We couldn’t load those titles." description="Try the search again in a moment." actionLabel="Try again" onAction={() => void resultsQuery.refetch()} />
+            ) : (
+            <>
             <MovieGrid
               movies={uniqueResults}
               loading={resultsQuery.isPending}
@@ -424,6 +438,8 @@ function HomeContent() {
                 </button>
               )}
             </div>
+            </>
+            )}
           </div>
         ) : (
           <div className="space-y-10">

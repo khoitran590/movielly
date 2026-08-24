@@ -65,7 +65,7 @@ const adapters = {
 
 export default function TitleDetail({ type, id }: { type: TitleType; id: number }) {
   const adapter = adapters[type];
-  const { data: title, isPending } = useQuery({
+  const { data: title, isPending, isError, refetch } = useQuery({
     queryKey: [type, id],
     queryFn: ({ signal }) => adapter.fetch(id, signal),
     staleTime: QUERY_STALE_TIME.details,
@@ -87,6 +87,9 @@ export default function TitleDetail({ type, id }: { type: TitleType; id: number 
   });
 
   if (isPending) return <TitleDetailSkeleton />;
+  if (isError) {
+    return <EmptyState title="The projector is having trouble." description="We couldn’t load this title right now." actionLabel="Try again" onAction={() => void refetch()} />;
+  }
   if (!title) {
     return <EmptyState title="This title isn’t in the house." description="The link may be broken, or TMDB no longer lists it." actionLabel="Back to browse" actionHref="/" />;
   }
@@ -120,7 +123,7 @@ function TitleDetailContent({
   const { user } = useAuth();
   const { toast } = useToast();
   const actions = useTitleActions(titleItem);
-  const reviewData = useReviews(titleItem.id);
+  const reviewData = useReviews(titleItem.id, type);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewContent, setReviewContent] = useState('');
@@ -180,6 +183,8 @@ function TitleDetailContent({
             onWatchTrailer={() => primaryTrailerId && setActiveTrailer(primaryTrailerId)}
             watched={actions.inWatchlist}
             onToggleWatched={() => void actions.toggleWatchlist()}
+            wantToWatch={actions.inWantToWatch}
+            onToggleWantToWatch={() => void actions.toggleWantToWatch()}
             favorited={actions.inFavorites}
             onToggleFavorite={() => void actions.toggleFavorite()}
             reviewRating={reviewData.userReview?.rating}

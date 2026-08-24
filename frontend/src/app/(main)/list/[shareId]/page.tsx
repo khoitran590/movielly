@@ -13,7 +13,7 @@ import type { SharedList } from '@/types';
 // The public face of the product: a printed program, not an internal list.
 export default function SharedListPage() {
   const { shareId } = useParams<{ shareId: string }>();
-  const { data, isPending: loading, isError: notFound } = useQuery<SharedList>({
+  const { data, isPending: loading, isError, refetch } = useQuery<SharedList>({
     queryKey: ['sharedList', shareId],
     queryFn: ({ signal }) => lists.getShared(shareId, signal),
     enabled: !!shareId,
@@ -28,7 +28,11 @@ export default function SharedListPage() {
     );
   }
 
-  if (notFound || !data) {
+  if (isError) {
+    return <EmptyState title="This list is taking an intermission." description="We couldn’t load it right now." actionLabel="Try again" onAction={() => void refetch()} />;
+  }
+
+  if (!data) {
     return (
       <EmptyState
         title="This list isn’t in the house."

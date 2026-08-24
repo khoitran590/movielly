@@ -10,9 +10,10 @@ import Input from '@/components/ui/Input';
 import AuthShell from '@/components/auth/AuthShell';
 import Spinner from '@/components/ui/Spinner';
 
+const supabase = createClient();
+
 export default function ResetPasswordPage() {
   const router = useRouter();
-  const supabase = createClient();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -29,7 +30,7 @@ export default function ResetPasswordPage() {
         else router.push('/forgot-password');
       }
     });
-  }, []);
+  }, [router]);
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();

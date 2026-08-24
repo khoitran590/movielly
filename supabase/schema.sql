@@ -20,6 +20,21 @@ CREATE POLICY "Public profiles are viewable by everyone"
 CREATE POLICY "Users can update own profile"
   ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
+-- Per-user availability preferences. Provider IDs are TMDB/JustWatch IDs,
+-- stored as JSON so an account can choose more than one service.
+CREATE TABLE IF NOT EXISTS public.user_preferences (
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  region TEXT NOT NULL DEFAULT 'US' CHECK (region ~ '^[A-Z]{2}$'),
+  preferred_provider_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.user_preferences ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own preferences"
+  ON public.user_preferences FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can manage own preferences"
+  ON public.user_preferences FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
 -- Auto-create profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
@@ -48,7 +63,7 @@ CREATE TABLE IF NOT EXISTS public.reviews (
   content      TEXT,
   created_at   TIMESTAMPTZ DEFAULT NOW(),
   updated_at   TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE (user_id, movie_id)
+  UNIQUE (user_id, movie_type, movie_id)
 );
 
 ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
@@ -81,7 +96,9 @@ CREATE TABLE IF NOT EXISTS public.watchlist (
   movie_poster TEXT,
   movie_type   TEXT DEFAULT 'movie' CHECK (movie_type IN ('movie', 'tv')),
   added_at     TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE (user_id, movie_id)
+  title_status TEXT NOT NULL DEFAULT 'watched' CHECK (title_status IN ('planned', 'watched')),
+  watched_at   TIMESTAMPTZ,
+  UNIQUE (user_id, movie_type, movie_id)
 );
 
 ALTER TABLE public.watchlist ENABLE ROW LEVEL SECURITY;
@@ -109,7 +126,7 @@ CREATE TABLE IF NOT EXISTS public.favorites (
   movie_poster TEXT,
   movie_type   TEXT DEFAULT 'movie' CHECK (movie_type IN ('movie', 'tv')),
   added_at     TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE (user_id, movie_id)
+  UNIQUE (user_id, movie_type, movie_id)
 );
 
 ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;

@@ -15,6 +15,8 @@ type TitleListRow = {
   movie_poster: string | null;
   movie_type: string | null;
   added_at: string | null;
+  title_status: string;
+  watched_at: string | null;
 };
 
 type TitleListInsert = {
@@ -25,7 +27,12 @@ type TitleListInsert = {
   movie_poster?: string | null;
   movie_type?: string | null;
   added_at?: string | null;
+  title_status?: string;
+  watched_at?: string | null;
 };
+
+type FavoriteRow = Omit<TitleListRow, 'title_status' | 'watched_at'>;
+type FavoriteInsert = Omit<TitleListInsert, 'title_status' | 'watched_at'>;
 
 export type Database = {
   public: {
@@ -51,6 +58,27 @@ export type Database = {
           avatar_url?: string | null;
           bio?: string | null;
           created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      user_preferences: {
+        Row: {
+          user_id: string;
+          region: string;
+          preferred_provider_ids: Json;
+          updated_at: string | null;
+        };
+        Insert: {
+          user_id: string;
+          region?: string;
+          preferred_provider_ids?: Json;
+          updated_at?: string | null;
+        };
+        Update: {
+          user_id?: string;
+          region?: string;
+          preferred_provider_ids?: Json;
+          updated_at?: string | null;
         };
         Relationships: [];
       };
@@ -108,9 +136,9 @@ export type Database = {
         Relationships: [];
       };
       favorites: {
-        Row: TitleListRow;
-        Insert: TitleListInsert;
-        Update: Partial<TitleListInsert>;
+        Row: FavoriteRow;
+        Insert: FavoriteInsert;
+        Update: Partial<FavoriteInsert>;
         Relationships: [];
       };
       shared_lists: {

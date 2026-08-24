@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { getPosterUrl, getBackdropUrl } from '@/lib/api';
@@ -54,12 +55,20 @@ export default function TitleHero({
         />
       </div>
 
-      <button
-        onClick={() => router.back()}
+      <Link
+        href="/"
+        onClick={(event) => {
+          // A history back is pleasant within Movielly, but a direct/shared
+          // link must always have a safe in-app destination.
+          if (window.history.length > 1 && document.referrer.startsWith(window.location.origin)) {
+            event.preventDefault();
+            router.back();
+          }
+        }}
         className="focus-ring absolute left-5 top-5 z-10 inline-flex items-center gap-1.5 rounded-full bg-ink/40 px-3 py-1.5 text-ui text-screen backdrop-blur-sm transition-colors hover:bg-ink/70 sm:left-8"
       >
         <ChevronLeft className="w-4 h-4" /> Back
-      </button>
+      </Link>
 
       <div className="relative mx-auto max-w-7xl px-5 pb-8 pt-[min(44vh,400px)] sm:px-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:gap-8">

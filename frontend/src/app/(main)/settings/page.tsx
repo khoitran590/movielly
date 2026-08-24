@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { Camera, User as UserIcon } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { profiles, avatars } from '@/lib/db';
@@ -9,6 +10,9 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import { PageSpinner } from '@/components/ui/Spinner';
+import { movies as movieApi } from '@/lib/api';
+import { usePreferences } from '@/hooks/usePreferences';
+import { QUERY_STALE_TIME } from '@/lib/queryConfig';
 
 const MAX_BIO = 280;
 const MAX_AVATAR_BYTES = 3 * 1024 * 1024; // 3 MB
@@ -19,11 +23,15 @@ export default function SettingsPage() {
   const supabase = createClient();
   const { toast } = useToast();
   const { user, username, avatarUrl, bio, loading: authLoading, refreshProfile } = useAuth();
+  const { preferences, save: savePreferences, isLoading: preferencesLoading } = usePreferences();
   const [usernameInput, setUsernameInput] = useState('');
   const [bioInput, setBioInput] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [region, setRegion] = useState('US');
+  const [providerIds, setProviderIds] = useState<number[]>([]);
+  const [savingAvailability, setSavingAvailability] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -32,6 +40,22 @@ export default function SettingsPage() {
 
   useEffect(() => { setBioInput(bio || ''); }, [bio]);
   useEffect(() => { if (username) setUsernameInput(username); }, [username]);
+  useEffect(() => {
+    setRegion(preferences.region);
+    setProviderIds(preferences.preferred_provider_ids);
+  }, [preferences]);
+
+  const { data: regions = [], isError: regionsError, refetch: refetchRegions } = useQuery({
+    queryKey: ['provider-regions'],
+    queryFn: ({ signal }) => movieApi.providerRegions(signal),
+    staleTime: QUERY_STALE_TIME.referenceData,
+  });
+  const { data: providers = [], isLoading: providersLoading, isError: providersError, refetch: refetchProviders } = useQuery({
+    queryKey: ['provider-catalog', region],
+    queryFn: ({ signal }) => movieApi.providerCatalog(region, 'movie', signal),
+    enabled: Boolean(region),
+    staleTime: QUERY_STALE_TIME.referenceData,
+  });
 
   // Clean up object URLs
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
@@ -84,6 +108,18 @@ export default function SettingsPage() {
       toast('Profile updated');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAvailabilitySave = async () => {
+    setSavingAvailability(true);
+    try {
+      await savePreferences(region, providerIds);
+      toast('Availability preferences saved');
+    } catch {
+      toast('Could not save availability preferences', 'error');
+    } finally {
+      setSavingAvailability(false);
     }
   };
 
@@ -173,6 +209,44 @@ export default function SettingsPage() {
           </Button>
         </div>
       </div>
+
+      <section className="space-y-5 rounded-panel border border-rail bg-velvet p-6">
+        <div>
+          <h2 className="font-display text-title text-screen">Availability</h2>
+          <p className="mt-1 text-body text-fog">Choose your country and the services you use. We’ll prioritize them when showing where a title is available.</p>
+        </div>
+
+        <label className="block space-y-2">
+          <span className="text-ui font-medium text-fog">Country</span>
+          <select
+            value={region}
+            onChange={event => { setRegion(event.target.value); setProviderIds([]); }}
+            disabled={preferencesLoading || regions.length === 0}
+            className="focus-ring w-full rounded-xl border border-rail bg-seat px-3 py-2.5 text-ui text-screen"
+          >
+            {regions.map(item => <option key={item.iso_3166_1} value={item.iso_3166_1}>{item.english_name}</option>)}
+          </select>
+          {regionsError && <button type="button" onClick={() => void refetchRegions()} className="focus-ring text-meta text-tungsten hover:underline">Couldn’t load countries. Try again.</button>}
+        </label>
+
+        <fieldset className="space-y-2">
+          <legend className="text-ui font-medium text-fog">Preferred services</legend>
+          {providersLoading ? (
+            <div className="h-16 animate-pulse rounded-xl bg-seat" />
+          ) : providersError ? (
+            <button type="button" onClick={() => void refetchProviders()} className="focus-ring text-ui text-tungsten hover:underline">Couldn’t load services. Try again.</button>
+          ) : providers.length ? (
+            <div className="flex max-h-48 flex-wrap gap-2 overflow-y-auto pr-1">
+              {providers.map(provider => {
+                const selected = providerIds.includes(provider.provider_id);
+                return <button key={provider.provider_id} type="button" onClick={() => setProviderIds(ids => selected ? ids.filter(id => id !== provider.provider_id) : [...ids, provider.provider_id])} className={`focus-ring rounded-full border px-3 py-1.5 text-ui transition-colors ${selected ? 'border-tungsten bg-tungsten/10 text-tungsten' : 'border-rail text-fog hover:bg-seat hover:text-screen'}`}>{provider.provider_name}</button>;
+              })}
+            </div>
+          ) : <p className="text-meta text-fog">No service catalogue is available for this country yet.</p>}
+        </fieldset>
+
+        <div className="flex justify-end"><Button onClick={handleAvailabilitySave} loading={savingAvailability} disabled={preferencesLoading}>{savingAvailability ? 'Saving…' : 'Save availability'}</Button></div>
+      </section>
     </div>
   );
 }

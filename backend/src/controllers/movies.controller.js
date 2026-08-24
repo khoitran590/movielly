@@ -146,3 +146,21 @@ exports.providers = async (req, res) => {
     handleTmdbError(err, res);
   }
 };
+
+exports.providerRegions = async (_req, res) => {
+  try {
+    res.json(await tmdbService.watchProviderRegions());
+  } catch (err) {
+    handleTmdbError(err, res);
+  }
+};
+
+exports.providerCatalog = async (req, res) => {
+  const base = req.query.type === 'tv' ? 'tv' : 'movie';
+  const region = (req.query.region || 'US').toString().toUpperCase();
+  try {
+    res.json(await tmdbService.watchProviderCatalog(base, region));
+  } catch (err) {
+    handleTmdbError(err, res);
+  }
+};

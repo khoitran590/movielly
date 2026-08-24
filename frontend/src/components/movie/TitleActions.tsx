@@ -1,6 +1,6 @@
 'use client';
 
-import { Play, BookmarkPlus, BookmarkCheck, Heart, Star } from 'lucide-react';
+import { Play, BookmarkPlus, BookmarkCheck, Heart, Star, ListPlus } from 'lucide-react';
 import Button from '@/components/ui/Button';
 
 interface TitleActionsProps {
@@ -8,6 +8,8 @@ interface TitleActionsProps {
   onWatchTrailer: () => void;
   watched: boolean;
   onToggleWatched: () => void;
+  wantToWatch: boolean;
+  onToggleWantToWatch: () => void;
   favorited: boolean;
   onToggleFavorite: () => void;
   reviewRating?: number | null;
@@ -20,6 +22,8 @@ export default function TitleActions({
   onWatchTrailer,
   watched,
   onToggleWatched,
+  wantToWatch,
+  onToggleWantToWatch,
   favorited,
   onToggleFavorite,
   reviewRating,
@@ -40,6 +44,15 @@ export default function TitleActions({
       >
         {watched ? <BookmarkCheck className="w-4 h-4" /> : <BookmarkPlus className="w-4 h-4" />}
         {watched ? 'Watched' : 'Mark watched'}
+      </Button>
+
+      <Button
+        variant="ghost"
+        onClick={onToggleWantToWatch}
+        className={wantToWatch ? 'bg-seat text-tungsten hover:bg-seat hover:text-tungsten' : ''}
+      >
+        <ListPlus className="w-4 h-4" />
+        {wantToWatch ? 'Want to watch' : 'Add to watchlist'}
       </Button>
 
       <Button

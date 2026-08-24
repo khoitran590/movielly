@@ -5,25 +5,26 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { reviews as reviewsDb } from '@/lib/db';
 import { useAuth } from '@/context/AuthContext';
 import type { Review } from '@/types';
+import { titleIdentity, type TitleType } from '@/lib/titleIdentity';
 
 // useWatchlist lives in '@/context/WatchlistContext' and
 // useFavorites in '@/context/FavoritesContext' (shared TanStack Query cache each).
 
-export function useReviews(movieId?: number) {
+export function useReviews(movieId?: number, movieType?: TitleType) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const queryKey = ['reviews', movieId];
+  const queryKey = ['reviews', movieType, movieId];
 
   const { data: reviews = [], refetch } = useQuery({
     queryKey,
-    queryFn: () => reviewsDb.listForMovie(movieId!),
-    enabled: !!movieId,
+    queryFn: () => reviewsDb.listForMovie(movieType!, movieId!),
+    enabled: !!movieId && !!movieType,
   });
 
   const userReview = user ? reviews.find(r => r.user_id === user.id) || null : null;
 
   const upsert = async (payload: { rating: number; content: string; movie_title: string; movie_poster: string | null; movie_type: 'movie' | 'tv' }) => {
-    if (!user || !movieId) return;
+    if (!user || !movieId || !movieType) return;
     const { error } = await reviewsDb.upsert(user.id, movieId, payload);
     if (!error) {
       await refetch();
@@ -34,8 +35,8 @@ export function useReviews(movieId?: number) {
   };
 
   const deleteReview = async () => {
-    if (!user || !movieId) return;
-    await reviewsDb.remove(user.id, movieId);
+    if (!user || !movieId || !movieType) return;
+    await reviewsDb.remove(user.id, movieType, movieId);
     queryClient.setQueryData<Review[]>(queryKey, (prev = []) => prev.filter(r => r.user_id !== user.id));
     queryClient.invalidateQueries({ queryKey: ['myReviews', user.id] });
   };
@@ -51,6 +52,6 @@ export function useMyReviews() {
     queryFn: () => reviewsDb.listByUser(user!.id),
     enabled: !!user,
   });
-  const byMovieId = useMemo(() => new Map(reviews.map(r => [r.movie_id, r])), [reviews]);
-  return { reviews, byMovieId, loading: !!user && isLoading };
+  const byTitleIdentity = useMemo(() => new Map(reviews.map(r => [titleIdentity(r.movie_type, r.movie_id), r])), [reviews]);
+  return { reviews, byTitleIdentity, loading: !!user && isLoading };
 }

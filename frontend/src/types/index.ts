@@ -70,6 +70,8 @@ export interface WatchlistItem {
   movie_poster: string | null;
   movie_type: 'movie' | 'tv';
   added_at: string;
+  title_status: 'planned' | 'watched';
+  watched_at: string | null;
 }
 
 export interface FavoriteItem {
@@ -135,6 +137,18 @@ export interface WatchProvider {
   provider_id: number;
   provider_name: string;
   logo_path: string | null;
+}
+
+export interface WatchRegion {
+  iso_3166_1: string;
+  english_name: string;
+  native_name: string;
+}
+
+export interface UserPreferences {
+  region: string;
+  preferred_provider_ids: number[];
+  updated_at: string | null;
 }
 
 export interface WatchProviders {

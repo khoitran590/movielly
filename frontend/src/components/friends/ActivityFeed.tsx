@@ -61,7 +61,7 @@ function Row({ entry }: { entry: FeedEntry }) {
 
 export default function ActivityFeed() {
   const { user } = useAuth();
-  const { data = [], isPending } = useQuery({
+  const { data = [], isPending, isError, refetch } = useQuery({
     queryKey: ['activity', user?.id],
     queryFn: () => activity.forUser(user!.id),
     enabled: !!user,
@@ -76,6 +76,10 @@ export default function ActivityFeed() {
         ))}
       </ul>
     );
+  }
+
+  if (isError) {
+    return <EmptyState title="The activity feed is quiet for now." description="We couldn’t load your friends’ activity." actionLabel="Try again" onAction={() => void refetch()} className="py-12" />;
   }
 
   if (data.length === 0) {

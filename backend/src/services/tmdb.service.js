@@ -47,4 +47,10 @@ const discover = (base, params) =>
 const watchProviders = (base, id) =>
   tmdb.get(`/${base}/${id}/watch/providers`).then(r => r.data);
 
-module.exports = { tmdb, search, trending, details, popular, genreList, discover, watchProviders };
+const watchProviderRegions = () =>
+  tmdb.get('/watch/providers/regions').then(r => r.data);
+
+const watchProviderCatalog = (base, region) =>
+  tmdb.get(`/watch/providers/${base}`, { params: { watch_region: region } }).then(r => r.data);
+
+module.exports = { tmdb, search, trending, details, popular, genreList, discover, watchProviders, watchProviderRegions, watchProviderCatalog };

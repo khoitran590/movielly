@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Movie, TmdbResponse, TrailerItem, Genre, WatchProviders, SharedList } from '@/types';
+import type { Movie, TmdbResponse, TrailerItem, Genre, WatchProviders, SharedList, WatchProvider, WatchRegion } from '@/types';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
@@ -110,6 +110,12 @@ export const movies = {
     api.get<WatchProviders>(
       `/api/movies/${type}/${id}/providers`, { params: { region }, signal }
     ).then(r => r.data),
+
+  providerRegions: (signal?: AbortSignal) =>
+    api.get<{ results: WatchRegion[] }>('/api/movies/provider-regions', { signal }).then(r => r.data.results),
+
+  providerCatalog: (region: string, type: 'movie' | 'tv' = 'movie', signal?: AbortSignal) =>
+    api.get<{ results: WatchProvider[] }>('/api/movies/provider-catalog', { params: { region, type }, signal }).then(r => r.data.results),
 };
 
 // TMDB provider logos live on the same image CDN as posters.
