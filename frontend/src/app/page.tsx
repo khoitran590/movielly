@@ -66,6 +66,23 @@ function yearRange(value: string | null) {
   return { dateFrom: `${start}-01-01`, dateTo: `${Math.min(start + 9, CURRENT_YEAR + 5)}-12-31` };
 }
 
+const toMediaType = (type: 'movie' | 'tv') => (movie: Movie) => ({ ...movie, media_type: type });
+
+async function getPopularShelf(type: 'movie' | 'tv', signal?: AbortSignal) {
+  const pages = await Promise.all([1, 2].map((page) => movieApi.popular(type, page, signal)));
+  return pages.flatMap((page) => page.results.map(toMediaType(type)));
+}
+
+async function getTrendingShelf(signal?: AbortSignal) {
+  const pages = await Promise.all([1, 2].map((page) => movieApi.trending('week', 'all', page, signal)));
+  return pages.flatMap((page) => page.results.filter((movie) => movie.media_type !== 'person'));
+}
+
+async function getGenreShelf(type: 'movie' | 'tv', genreId: number, signal?: AbortSignal) {
+  const data = await movieApi.discover({ type, genreId, page: 1, signal });
+  return data.results.map(toMediaType(type));
+}
+
 function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
     <button
@@ -262,21 +279,21 @@ function HomeContent() {
 
   const { data: trending = [], isPending: trendingLoading, isError: trendingError, refetch: refetchTrending } = useQuery({
     queryKey: ['trending', 'week', 'all'],
-    queryFn: async ({ signal }) => (await movieApi.trending('week', 'all', 1, signal)).results.filter((movie) => movie.media_type !== 'person'),
+    queryFn: ({ signal }) => getTrendingShelf(signal),
     enabled: !resultsMode,
     staleTime: QUERY_STALE_TIME.browse,
   });
 
   const { data: popularFilms = [], isPending: filmsLoading, isError: filmsError, refetch: refetchFilms } = useQuery({
     queryKey: ['popular', 'movie'],
-    queryFn: async ({ signal }) => (await movieApi.popular('movie', 1, signal)).results.map((movie) => ({ ...movie, media_type: 'movie' as const })),
+    queryFn: ({ signal }) => getPopularShelf('movie', signal),
     enabled: !resultsMode,
     staleTime: QUERY_STALE_TIME.browse,
   });
 
   const { data: popularSeries = [], isPending: seriesLoading, isError: seriesError, refetch: refetchSeries } = useQuery({
     queryKey: ['popular', 'tv'],
-    queryFn: async ({ signal }) => (await movieApi.popular('tv', 1, signal)).results.map((movie) => ({ ...movie, media_type: 'tv' as const })),
+    queryFn: ({ signal }) => getPopularShelf('tv', signal),
     enabled: !resultsMode,
     staleTime: QUERY_STALE_TIME.browse,
   });
@@ -292,6 +309,20 @@ function HomeContent() {
     },
     enabled: !resultsMode && Boolean(user && shelfSeed),
     staleTime: QUERY_STALE_TIME.trailersAndSimilar,
+  });
+
+  const { data: actionFilms = [], isPending: actionLoading } = useQuery({
+    queryKey: ['home-shelf', 'movie', 'action'],
+    queryFn: ({ signal }) => getGenreShelf('movie', 28, signal),
+    enabled: !resultsMode,
+    staleTime: QUERY_STALE_TIME.browse,
+  });
+
+  const { data: dramaSeries = [], isPending: dramaLoading } = useQuery({
+    queryKey: ['home-shelf', 'tv', 'drama'],
+    queryFn: ({ signal }) => getGenreShelf('tv', 18, signal),
+    enabled: !resultsMode,
+    staleTime: QUERY_STALE_TIME.browse,
   });
 
   const resultsQuery = useInfiniteQuery({
@@ -442,11 +473,18 @@ function HomeContent() {
             )}
           </div>
         ) : (
-          <div className="space-y-10">
-            {shelfSeed && shelf.length > 0 && <PosterRail title={`Because you saved ${shelfSeed.movie_title}`} movies={shelf} />}
-            <PosterRail title="Trending this week" movies={trendingRail.slice(0, 16)} loading={trendingLoading} href="/?view=trending" />
-            <PosterRail title="Popular films" movies={popularFilms.slice(0, 16)} loading={filmsLoading} href="/?type=movie" />
-            <PosterRail title="Popular series" movies={popularSeries.slice(0, 16)} loading={seriesLoading} href="/?type=tv" />
+          <div className="space-y-12">
+            <div className="max-w-2xl">
+              <p className="font-mono text-caption uppercase tracking-[0.16em] text-tungsten">Choose your next story</p>
+              <h2 className="mt-2 font-display text-display-md text-screen">More to watch, less to hunt for.</h2>
+              <p className="mt-2 text-body text-fog">Fresh shelves for a quick pick, a long night in, or the show that keeps you up one episode later.</p>
+            </div>
+            {shelfSeed && shelf.length > 0 && <PosterRail eyebrow="Your next watch" title={`Because you saved ${shelfSeed.movie_title}`} description="A few more titles with the same pull." movies={shelf.slice(0, 24)} />}
+            <PosterRail eyebrow="The conversation right now" title="Trending this week" description="The titles everyone is passing around." movies={trendingRail.slice(0, 24)} loading={trendingLoading} href="/?view=trending" />
+            <PosterRail eyebrow="Tonight's big screen pick" title="Popular films" description="Big stories, bright posters, and no filler." movies={popularFilms.slice(0, 24)} loading={filmsLoading} href="/?type=movie" />
+            <PosterRail eyebrow="Just one more" title="Popular series" description="The shows built for a next episode." movies={popularSeries.slice(0, 24)} loading={seriesLoading} href="/?type=tv" />
+            <PosterRail eyebrow="Turn the volume up" title="Edge-of-your-seat films" description="High-stakes movies for when you want momentum." movies={actionFilms.slice(0, 20)} loading={actionLoading} href="/?type=movie&genre=28" />
+            <PosterRail eyebrow="Stay with it" title="Drama worth settling into" description="Character-driven series with plenty to unpack." movies={dramaSeries.slice(0, 20)} loading={dramaLoading} href="/?type=tv&genre=18" />
           </div>
         )}
       </div>

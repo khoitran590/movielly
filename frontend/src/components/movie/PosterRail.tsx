@@ -9,6 +9,10 @@ import type { Movie } from '@/types';
 interface PosterRailProps {
   title: string;
   movies: Movie[];
+  /** Short editorial hook shown above the rail title. */
+  eyebrow?: string;
+  /** A little context helps a shelf feel curated instead of generic. */
+  description?: string;
   /** "View all" target. Omit to hide the link. */
   href?: string;
   onViewAll?: () => void;
@@ -32,7 +36,7 @@ export function RailSkeleton({ title }: { title?: string }) {
 
 // A quiet horizontal shelf of posters. Native overflow scroll with snap points,
 // chevrons only where there is a real pointer to click them with.
-export default function PosterRail({ title, movies, href, onViewAll, loading = false }: PosterRailProps) {
+export default function PosterRail({ title, movies, eyebrow, description, href, onViewAll, loading = false }: PosterRailProps) {
   const scroller = useRef<HTMLDivElement>(null);
 
   if (loading) return <RailSkeleton title={title} />;
@@ -48,7 +52,11 @@ export default function PosterRail({ title, movies, href, onViewAll, loading = f
   return (
     <section className="group/rail relative space-y-3">
       <div className="flex items-baseline justify-between gap-4">
-        <h2 className="text-body font-semibold text-screen">{title}</h2>
+        <div>
+          {eyebrow && <p className="font-mono text-caption uppercase tracking-[0.14em] text-tungsten">{eyebrow}</p>}
+          <h2 className="text-body font-semibold text-screen">{title}</h2>
+          {description && <p className="mt-0.5 text-meta text-fog">{description}</p>}
+        </div>
         {href && (
           <Link href={href} className="focus-ring rounded-full text-ui text-fog transition-colors hover:text-screen">
             View all →
