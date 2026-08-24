@@ -3,10 +3,20 @@
 @tailwind utilities;
 
 @layer base {
-  /* Dark-only. Semantic tokens (shadcn / tubelight navbar) map onto the
-     late-night-cinema palette in tailwind.config.ts. */
   :root {
     color-scheme: dark;
+    --color-ink: 11 10 9;
+    --color-velvet: 22 19 16;
+    --color-seat: 33 28 24;
+    --color-rail: 44 38 31;
+    --color-surface-500: 58 50 41;
+    --color-fog: 138 130 120;
+    --color-screen: 243 237 227;
+    --color-tungsten: 224 168 74;
+    --color-tungsten-light: 232 194 122;
+    --color-tungsten-dim: 176 126 44;
+    --color-ticket: 194 59 59;
+    --color-ticket-dim: 142 42 42;
     --background: 30 8% 4%;            /* ink */
     --foreground: 36 33% 92%;          /* screen */
     --primary: 38 71% 58%;             /* tungsten */
@@ -21,13 +31,55 @@
     --mobile-dock-clearance: calc(var(--mobile-dock-offset) + var(--mobile-dock-height) + 0.75rem);
   }
 
+  .light {
+    color-scheme: light;
+    --color-ink: 247 243 236;
+    --color-velvet: 255 253 249;
+    --color-seat: 237 230 220;
+    --color-rail: 214 202 186;
+    --color-surface-500: 190 175 155;
+    --color-fog: 106 97 88;
+    --color-screen: 37 31 26;
+    --color-tungsten: 139 87 21;
+    --color-tungsten-light: 164 109 34;
+    --color-tungsten-dim: 112 67 13;
+    --color-ticket: 168 46 46;
+    --color-ticket-dim: 126 32 32;
+    --background: 37 29% 95%;
+    --foreground: 30 17% 12%;
+    --primary: 34 74% 31%;
+    --primary-foreground: 37 29% 95%;
+    --muted: 36 33% 99%;
+    --muted-foreground: 29 9% 38%;
+    --border: 35 24% 78%;
+    --popover: 36 33% 99%;
+    --popover-foreground: 30 17% 12%;
+  }
+
+  /* Artwork heroes remain a dark screening room in either app theme. */
+  .theme-dark {
+    color-scheme: dark;
+    --color-ink: 11 10 9;
+    --color-velvet: 22 19 16;
+    --color-seat: 33 28 24;
+    --color-rail: 44 38 31;
+    --color-surface-500: 58 50 41;
+    --color-fog: 138 130 120;
+    --color-screen: 243 237 227;
+    --color-tungsten: 224 168 74;
+    --color-tungsten-light: 232 194 122;
+    --color-tungsten-dim: 176 126 44;
+    --color-ticket: 194 59 59;
+    --color-ticket-dim: 142 42 42;
+  }
+
   * {
     box-sizing: border-box;
   }
 
   html {
     scroll-behavior: smooth;
-    background-color: #0B0A09;
+    background-color: rgb(var(--color-ink));
     /* Guard against sideways scroll on mobile from any stray overflow. Applied
        to the scroller so overflow-y computes to auto — vertical scroll (and the
        sticky navbar) stay intact. */
@@ -38,9 +90,9 @@
     /* A barely-there tungsten bloom at the top of the page — the house lights
        just before they drop. No canvas, no animation, no blur. */
     background:
-      radial-gradient(1200px 600px at 50% -10%, rgba(224, 168, 74, 0.06), transparent 60%),
-      #0B0A09;
-    @apply font-sans text-screen antialiased;
+      radial-gradient(1200px 600px at 50% -10%, rgb(var(--color-tungsten) / 0.08), transparent 60%),
+      rgb(var(--color-ink));
+    @apply font-sans text-screen antialiased transition-colors duration-200;
     overflow-x: hidden;
     max-width: 100%;
   }
@@ -127,22 +179,22 @@
      white sheen, and no brand-colored inner glow. */
   .glass {
     position: relative;
-    background: rgba(11, 10, 9, 0.62);
+    background: rgb(var(--color-ink) / 0.76);
     backdrop-filter: blur(14px) saturate(120%);
     -webkit-backdrop-filter: blur(14px) saturate(120%);
-    border: 1px solid rgba(243, 237, 227, 0.08);
+    border: 1px solid rgb(var(--color-screen) / 0.1);
   }
 
   .glass-interactive {
     transition: border-color 0.2s ease, background 0.2s ease;
   }
   .glass-interactive:hover {
-    border-color: rgba(243, 237, 227, 0.16);
+    border-color: rgb(var(--color-screen) / 0.18);
   }
 
   /* Slightly more opaque, for controls that must stay readable over a backdrop. */
   .glass-tinted {
-    background: rgba(11, 10, 9, 0.78);
+    background: rgb(var(--color-ink) / 0.88);
   }
 
   /* ── Poster card behaviour ──────────────────────────────────────────

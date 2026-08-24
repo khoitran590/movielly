@@ -45,7 +45,7 @@ export default function NowShowing({ movie }: { movie: Movie }) {
     : null;
 
   return (
-    <section className={`relative ${HERO_HEIGHT} w-full overflow-hidden`}>
+    <section className={`theme-dark relative ${HERO_HEIGHT} w-full overflow-hidden`}>
       {backdrop && (
         <div className="hero-fade absolute inset-0">
           <Image src={backdrop} alt="" aria-hidden fill priority className="object-cover" sizes="100vw" />

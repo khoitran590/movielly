@@ -7,6 +7,7 @@ import { LogOut, Menu, Settings, User, X } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import SearchBar from '@/components/search/SearchBar';
 import Wordmark from './Wordmark';
+import ThemeToggle from './ThemeToggle';
 
 export default function Navbar() {
   const { user, username, avatarUrl, signOut } = useAuth();
@@ -24,6 +25,7 @@ export default function Navbar() {
           </div>
 
           <div className="col-start-2 row-start-1 flex items-center justify-end gap-2 md:col-start-3 lg:hidden">
+            <ThemeToggle />
             {user ? (
               <span className="relative h-8 w-8 overflow-hidden rounded-full border border-rail">
                 {avatarUrl ? <Image src={avatarUrl} alt="" fill sizes="32px" className="object-cover" /> : <span className="flex h-full items-center justify-center"><User className="h-4 w-4 text-fog" /></span>}

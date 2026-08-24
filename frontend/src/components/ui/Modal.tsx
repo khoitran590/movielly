@@ -17,6 +17,11 @@ const FOCUSABLE =
 export default function Modal({ open, onClose, title, children, maxWidth = 'max-w-lg' }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreTo = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   // Focus moves into the dialog on open and returns to the trigger on close;
   // Tab cycles inside the panel while it is open.
@@ -31,7 +36,7 @@ export default function Modal({ open, onClose, title, children, maxWidth = 'max-
     (first ?? panel)?.focus();
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key === 'Escape') { onCloseRef.current(); return; }
       if (e.key !== 'Tab' || !panel) return;
 
       const items = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE))
@@ -51,7 +56,7 @@ export default function Modal({ open, onClose, title, children, maxWidth = 'max-
       document.body.style.overflow = '';
       restoreTo.current?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 

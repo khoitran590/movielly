@@ -8,6 +8,7 @@ import { NAV_ITEMS } from '@/lib/nav';
 import { useAuth } from '@/context/AuthContext';
 import { useFriendRequestCount } from '@/hooks/useFriendRequestCount';
 import Wordmark from './Wordmark';
+import ThemeToggle from './ThemeToggle';
 
 export default function SideRail({
   expanded,
@@ -74,6 +75,7 @@ export default function SideRail({
       </nav>
 
       <div className="space-y-1 border-t border-rail p-2">
+        <ThemeToggle expanded={expanded} />
         {user ? (
           <>
             <div className={`flex items-center py-2 ${expanded ? 'gap-3 px-2' : 'justify-center'}`}>

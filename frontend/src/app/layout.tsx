@@ -33,12 +33,16 @@ export const metadata: Metadata = {
   description: 'Search movies and TV shows, write reviews, build your watchlist, and share your favorites.',
 };
 
+const themeScript = `(function(){try{var saved=localStorage.getItem('movielly:theme');var theme=saved==='light'||saved==='dark'?saved:(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.classList.remove('light','dark');document.documentElement.classList.add(theme)}catch(e){}})()`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
       className={`dark ${manrope.variable} ${bodoniModa.variable} ${ibmPlexMono.variable}`}
+      suppressHydrationWarning
     >
+      <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
       <body>
         <a
           href="#main"

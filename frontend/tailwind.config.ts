@@ -10,22 +10,41 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Late-night cinema: warm black room, gold for judgment, red for love.
-        // Posters carry the color; the UI does not.
-        ink: '#0B0A09',      // page background
-        velvet: '#161310',   // raised surface (cards, dropdowns, inputs)
-        seat: '#211C18',     // hover / inset well
-        rail: '#2C261F',     // borders, hairlines
-        fog: '#8A8278',      // secondary text, captions, placeholders
-        screen: '#F3EDE3',   // primary text
-        tungsten: { DEFAULT: '#E0A84A', dim: '#B07E2C' },
-        ticket: { DEFAULT: '#C23B3B', dim: '#8E2A2A' },
+        // Theme-aware cinema palette. RGB channels live in globals.css so the
+        // existing semantic class names work unchanged in dark and light mode.
+        ink: 'rgb(var(--color-ink) / <alpha-value>)',
+        velvet: 'rgb(var(--color-velvet) / <alpha-value>)',
+        seat: 'rgb(var(--color-seat) / <alpha-value>)',
+        rail: 'rgb(var(--color-rail) / <alpha-value>)',
+        fog: 'rgb(var(--color-fog) / <alpha-value>)',
+        screen: 'rgb(var(--color-screen) / <alpha-value>)',
+        tungsten: {
+          DEFAULT: 'rgb(var(--color-tungsten) / <alpha-value>)',
+          dim: 'rgb(var(--color-tungsten-dim) / <alpha-value>)',
+        },
+        ticket: {
+          DEFAULT: 'rgb(var(--color-ticket) / <alpha-value>)',
+          dim: 'rgb(var(--color-ticket-dim) / <alpha-value>)',
+        },
 
         // Migration aliases — every legacy `surface-*` / `brand` / `gold` class
         // now resolves to the new palette. Prefer the named tokens above.
-        surface: { 900: '#0B0A09', 800: '#161310', 700: '#211C18', 600: '#2C261F', 500: '#3A3229' },
-        brand: { DEFAULT: '#E0A84A', light: '#E0A84A', dark: '#B07E2C' },
-        gold: { DEFAULT: '#E0A84A', light: '#E8C27A' },
+        surface: {
+          900: 'rgb(var(--color-ink) / <alpha-value>)',
+          800: 'rgb(var(--color-velvet) / <alpha-value>)',
+          700: 'rgb(var(--color-seat) / <alpha-value>)',
+          600: 'rgb(var(--color-rail) / <alpha-value>)',
+          500: 'rgb(var(--color-surface-500) / <alpha-value>)',
+        },
+        brand: {
+          DEFAULT: 'rgb(var(--color-tungsten) / <alpha-value>)',
+          light: 'rgb(var(--color-tungsten) / <alpha-value>)',
+          dark: 'rgb(var(--color-tungsten-dim) / <alpha-value>)',
+        },
+        gold: {
+          DEFAULT: 'rgb(var(--color-tungsten) / <alpha-value>)',
+          light: 'rgb(var(--color-tungsten-light) / <alpha-value>)',
+        },
 
         // shadcn semantic tokens (driven by CSS vars in globals.css).
         background: 'hsl(var(--background))',

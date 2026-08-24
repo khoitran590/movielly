@@ -36,7 +36,7 @@ export default function TitleHero({
   const poster = getPosterUrl(posterPath, 'w342');
 
   return (
-    <section className="relative">
+    <section className="theme-dark relative bg-ink">
       <div className="absolute inset-x-0 top-0 h-[min(70vh,720px)] overflow-hidden">
         {backdrop ? (
           <Image src={backdrop} alt="" aria-hidden fill priority className="object-cover" sizes="100vw" />

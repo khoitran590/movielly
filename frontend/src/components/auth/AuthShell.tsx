@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
 import PosterWall from './PosterWall';
 import Wordmark from '@/components/layout/Wordmark';
+import ThemeToggle from '@/components/layout/ThemeToggle';
 import { movies, getPosterUrl } from '@/lib/api';
 import { QUERY_STALE_TIME } from '@/lib/queryConfig';
 
@@ -30,6 +31,7 @@ export default function AuthShell({ children }: { children: React.ReactNode }) {
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* Left — form */}
       <div className="relative flex items-center justify-center overflow-hidden px-5 py-12">
+        <div className="absolute right-5 top-5 z-10"><ThemeToggle /></div>
         {backdrop && (
           <Image
             src={backdrop}
@@ -47,7 +49,7 @@ export default function AuthShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Right — poster wall (desktop only) */}
-      <div className="relative hidden overflow-hidden border-l border-rail bg-ink lg:block">
+      <div className="theme-dark relative hidden overflow-hidden border-l border-rail bg-ink lg:block">
         <PosterWall posters={posters} />
 
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-l from-transparent via-ink/40 to-ink" />
