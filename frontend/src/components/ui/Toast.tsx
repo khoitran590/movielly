@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { Check, CircleAlert, X } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 interface Toast {
   id: string;
@@ -16,6 +17,7 @@ interface ToastContextValue {
 const ToastContext = createContext<ToastContextValue>({ toast: () => {} });
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [toasts, setToasts] = useState<Toast[]>([]);
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
@@ -40,7 +42,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      <div className="fixed bottom-[var(--mobile-dock-clearance)] left-1/2 z-[100] flex -translate-x-1/2 flex-col gap-2 md:bottom-4 md:left-auto md:right-4 md:translate-x-0" role="status" aria-live="polite">
+      <div className={`fixed left-1/2 z-[100] flex -translate-x-1/2 flex-col gap-2 md:bottom-4 md:left-auto md:right-4 md:translate-x-0 ${user ? 'bottom-[var(--mobile-dock-clearance)]' : 'bottom-4'}`} role="status" aria-live="polite">
         {toasts.map(t => (
           <div
             key={t.id}
