@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Film, Tv, BookmarkPlus, BookmarkCheck, Heart } from 'lucide-react';
+import { Film, Tv, BookmarkPlus, BookmarkCheck, Heart, ListPlus } from 'lucide-react';
 import { getPosterUrl, getYear } from '@/lib/api';
 import { useTitleActions } from '@/hooks/useTitleActions';
 import type { Movie } from '@/types';
@@ -20,7 +20,7 @@ interface MovieCardProps {
 
 // The card is the poster. No panel, no blurred echo, no pills on the art.
 export default function MovieCard({ movie, variant = 'poster', index, note }: MovieCardProps) {
-  const { isTV, href, title, inWatchlist, inFavorites, toggleWatchlist, toggleFavorite } = useTitleActions(movie);
+  const { isTV, href, title, inWatchlist, inWantToWatch, inFavorites, toggleWatchlist, toggleWantToWatch, toggleFavorite } = useTitleActions(movie);
   const poster = getPosterUrl(movie.poster_path);
   const year = getYear(movie);
 
@@ -38,6 +38,12 @@ export default function MovieCard({ movie, variant = 'poster', index, note }: Mo
     e.preventDefault();
     e.stopPropagation();
     void toggleFavorite();
+  };
+
+  const handleWantToWatch = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    void toggleWantToWatch();
   };
 
   if (variant === 'row') {
@@ -95,6 +101,17 @@ export default function MovieCard({ movie, variant = 'poster', index, note }: Mo
             }`}
           >
             <Heart className={`w-4 h-4 ${inFavorites ? 'fill-white' : ''}`} />
+          </button>
+          <button
+            onClick={handleWantToWatch}
+            aria-label={inWantToWatch ? `Remove ${title} from want to watch` : `Add ${title} to want to watch`}
+            className={`focus-ring flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${
+              inWantToWatch
+                ? 'border-tungsten bg-seat text-tungsten'
+                : 'border-[rgba(243,237,227,0.15)] bg-ink/70 text-screen hover:border-tungsten'
+            }`}
+          >
+            <ListPlus className="w-4 h-4" />
           </button>
           <button
             onClick={handleWatchlist}
