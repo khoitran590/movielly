@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import type { User, Session } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase';
 import { profiles } from '@/lib/db';
+import type { TopMovie } from '@/types';
 
 interface AuthContextValue {
   user: User | null;
@@ -11,6 +12,8 @@ interface AuthContextValue {
   username: string | null;
   avatarUrl: string | null;
   bio: string | null;
+  favoriteGenres: number[];
+  topMovies: TopMovie[];
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -22,6 +25,8 @@ const AuthContext = createContext<AuthContextValue>({
   username: null,
   avatarUrl: null,
   bio: null,
+  favoriteGenres: [],
+  topMovies: [],
   loading: true,
   signOut: async () => {},
   refreshProfile: async () => {},
@@ -37,6 +42,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [username, setUsername] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [bio, setBio] = useState<string | null>(null);
+  const [favoriteGenres, setFavoriteGenres] = useState<number[]>([]);
+  const [topMovies, setTopMovies] = useState<TopMovie[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -62,12 +69,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUsername(data.username);
       setAvatarUrl(data.avatar_url);
       setBio(data.bio ?? null);
+      setFavoriteGenres(data.favorite_genres ?? []);
+      setTopMovies(data.top_movies ?? []);
     }
   }, []);
 
   // Load the canonical profile from the profiles table whenever the user changes.
   useEffect(() => {
-    if (!user) { setUsername(null); setAvatarUrl(null); setBio(null); return; }
+    if (!user) {
+      setUsername(null);
+      setAvatarUrl(null);
+      setBio(null);
+      setFavoriteGenres([]);
+      setTopMovies([]);
+      return;
+    }
     const metaName = (user.user_metadata?.username as string | undefined) || null;
     loadProfile(user.id, metaName);
   }, [user, loadProfile]);
@@ -81,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, username, avatarUrl, bio, loading, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, username, avatarUrl, bio, favoriteGenres, topMovies, loading, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

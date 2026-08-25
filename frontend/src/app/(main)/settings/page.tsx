@@ -12,6 +12,7 @@ import Button from '@/components/ui/Button';
 import { PageSpinner } from '@/components/ui/Spinner';
 import { movies as movieApi } from '@/lib/api';
 import { usePreferences } from '@/hooks/usePreferences';
+import TasteEditor from '@/components/profile/TasteEditor';
 import { QUERY_STALE_TIME } from '@/lib/queryConfig';
 
 const MAX_BIO = 280;
@@ -209,6 +210,8 @@ export default function SettingsPage() {
           </Button>
         </div>
       </div>
+
+      <TasteEditor />
 
       <section className="space-y-5 rounded-panel border border-rail bg-velvet p-6">
         <div>

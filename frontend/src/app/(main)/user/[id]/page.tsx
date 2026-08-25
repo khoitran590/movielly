@@ -13,6 +13,7 @@ import MovieCard from '@/components/movie/MovieCard';
 import { GRID_CLASS } from '@/components/movie/MovieGrid';
 import EmptyState from '@/components/ui/EmptyState';
 import { PageSpinner } from '@/components/ui/Spinner';
+import TasteSummary from '@/components/profile/TasteSummary';
 import type { WatchlistItem, FriendProfile } from '@/types';
 
 // Guard: ids come from the URL and are interpolated into PostgREST .or() filters,
@@ -113,6 +114,13 @@ export default function FriendProfilePage() {
           description={`You and @${name} aren’t friends.`}
           actionLabel="Back to friends"
           actionHref="/friends"
+        />
+      )}
+
+      {result.view === 'ok' && profile && (
+        <TasteSummary
+          genres={profile.favorite_genres ?? []}
+          topMovies={profile.top_movies ?? []}
         />
       )}
 

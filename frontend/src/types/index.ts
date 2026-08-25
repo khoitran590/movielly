@@ -97,11 +97,24 @@ export interface SharedList {
   items: FavoriteItem[];
 }
 
+// One entry in a profile's all-time top five. Denormalized (title + poster
+// path) so rendering a profile never needs a TMDB round-trip.
+// A `type` alias, not an `interface`: only object type literals get the
+// implicit index signature that the jsonb (Json) column type requires.
+export type TopMovie = {
+  id: number;
+  title: string;
+  poster: string | null;
+  type: 'movie' | 'tv';
+};
+
 export interface FriendProfile {
   id: string;
   username: string | null;
   avatar_url: string | null;
   bio?: string | null;
+  favorite_genres?: number[];
+  top_movies?: TopMovie[];
 }
 
 export interface FriendEntry {

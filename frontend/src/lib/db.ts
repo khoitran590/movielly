@@ -3,7 +3,7 @@
 // lib/api.ts for the Express backend). The client is schema-typed against
 // src/types/database.ts.
 import { createClient } from './supabase';
-import type { WatchlistItem, FavoriteItem, Review, FriendProfile } from '@/types';
+import type { WatchlistItem, FavoriteItem, Review, FriendProfile, TopMovie } from '@/types';
 import type { TitleType } from './titleIdentity';
 
 const supabase = createClient();
@@ -23,24 +23,64 @@ export interface FriendshipRow {
 
 // ── Profiles ────────────────────────────────────────────────────────────────
 
+const PROFILE_COLUMNS = 'id, username, avatar_url, bio, favorite_genres, top_movies';
+
+// favorite_genres / top_movies are jsonb, so they arrive as unknown-shaped Json.
+// Everything downstream expects clean arrays; coerce once, here.
+const toGenreIds = (value: unknown): number[] =>
+  Array.isArray(value) ? value.filter((id): id is number => typeof id === 'number') : [];
+
+const toTopMovies = (value: unknown): TopMovie[] =>
+  Array.isArray(value)
+    ? value.flatMap(entry => {
+        if (!entry || typeof entry !== 'object') return [];
+        const { id, title, poster, type } = entry as Record<string, unknown>;
+        if (typeof id !== 'number' || typeof title !== 'string') return [];
+        return [{
+          id,
+          title,
+          poster: typeof poster === 'string' ? poster : null,
+          type: type === 'tv' ? 'tv' : 'movie',
+        } satisfies TopMovie];
+      })
+    : [];
+
+type ProfileRow = {
+  id: string;
+  username: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  favorite_genres: unknown;
+  top_movies: unknown;
+};
+
+const toProfile = (row: ProfileRow): FriendProfile => ({
+  id: row.id,
+  username: row.username,
+  avatar_url: row.avatar_url,
+  bio: row.bio,
+  favorite_genres: toGenreIds(row.favorite_genres),
+  top_movies: toTopMovies(row.top_movies),
+});
+
 export const profiles = {
   get: async (id: string): Promise<FriendProfile | null> => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, username, avatar_url, bio')
+      .select(PROFILE_COLUMNS)
       .eq('id', id)
       .maybeSingle();
     if (error) throw error;
-    return data;
+    return data ? toProfile(data) : null;
   },
 
   getMany: async (ids: string[]): Promise<FriendProfile[]> => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, username, avatar_url, bio')
+      .select(PROFILE_COLUMNS)
       .in('id', ids);
     if (error) throw error;
-    return data || [];
+    return (data || []).map(toProfile);
   },
 
   findByUsername: async (name: string): Promise<Pick<FriendProfile, 'id' | 'username'> | null> => {
@@ -53,7 +93,16 @@ export const profiles = {
     return data;
   },
 
-  update: async (id: string, patch: { username?: string; avatar_url?: string | null; bio?: string | null }) => {
+  update: async (
+    id: string,
+    patch: {
+      username?: string;
+      avatar_url?: string | null;
+      bio?: string | null;
+      favorite_genres?: number[];
+      top_movies?: TopMovie[];
+    },
+  ) => {
     const { error } = await supabase.from('profiles').update(patch).eq('id', id);
     return { error };
   },

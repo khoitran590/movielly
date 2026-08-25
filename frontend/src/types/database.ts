@@ -43,6 +43,8 @@ export type Database = {
           username: string | null;
           avatar_url: string | null;
           bio: string | null;
+          favorite_genres: Json;
+          top_movies: Json;
           created_at: string | null;
         };
         Insert: {
@@ -50,6 +52,8 @@ export type Database = {
           username?: string | null;
           avatar_url?: string | null;
           bio?: string | null;
+          favorite_genres?: Json;
+          top_movies?: Json;
           created_at?: string | null;
         };
         Update: {
@@ -57,6 +61,8 @@ export type Database = {
           username?: string | null;
           avatar_url?: string | null;
           bio?: string | null;
+          favorite_genres?: Json;
+          top_movies?: Json;
           created_at?: string | null;
         };
         Relationships: [];
