@@ -33,11 +33,11 @@ export default function ThemeToggle({ expanded = false }: { expanded?: boolean }
       onClick={toggle}
       aria-label={label}
       title={expanded ? undefined : label}
-      className={`focus-ring flex h-10 items-center rounded-lg text-fog transition-colors hover:bg-seat hover:text-screen ${
-        expanded ? 'w-full gap-3 px-3' : 'w-10 justify-center'
+      className={`focus-ring flex h-10 w-full items-center rounded-lg text-fog transition-colors hover:bg-seat hover:text-screen ${
+        expanded ? 'gap-3 px-3' : 'justify-center'
       }`}
     >
-      {current === 'dark' ? <Sun className="h-4 w-4" aria-hidden /> : <Moon className="h-4 w-4" aria-hidden />}
+      {current === 'dark' ? <Sun className="h-[18px] w-[18px]" aria-hidden /> : <Moon className="h-[18px] w-[18px]" aria-hidden />}
       {expanded && <span className="text-ui">{current === 'dark' ? 'Light mode' : 'Dark mode'}</span>}
     </button>
   );

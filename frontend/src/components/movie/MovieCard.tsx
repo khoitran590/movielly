@@ -97,7 +97,7 @@ export default function MovieCard({ movie, variant = 'poster', index, note }: Mo
             className={`focus-ring flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${
               inFavorites
                 ? 'border-ticket bg-ticket text-white'
-                : 'border-[rgba(243,237,227,0.15)] bg-ink/70 text-screen hover:border-ticket'
+                : 'border-screen/15 bg-ink/70 text-screen hover:border-ticket'
             }`}
           >
             <Heart className={`w-4 h-4 ${inFavorites ? 'fill-white' : ''}`} />
@@ -108,7 +108,7 @@ export default function MovieCard({ movie, variant = 'poster', index, note }: Mo
             className={`focus-ring flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${
               inWantToWatch
                 ? 'border-tungsten bg-seat text-tungsten'
-                : 'border-[rgba(243,237,227,0.15)] bg-ink/70 text-screen hover:border-tungsten'
+                : 'border-screen/15 bg-ink/70 text-screen hover:border-tungsten'
             }`}
           >
             <ListPlus className="w-4 h-4" />
@@ -119,7 +119,7 @@ export default function MovieCard({ movie, variant = 'poster', index, note }: Mo
             className={`focus-ring flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${
               inWatchlist
                 ? 'border-tungsten bg-tungsten text-ink'
-                : 'border-[rgba(243,237,227,0.15)] bg-ink/70 text-screen hover:border-tungsten'
+                : 'border-screen/15 bg-ink/70 text-screen hover:border-tungsten'
             }`}
           >
             {inWatchlist ? <BookmarkCheck className="w-4 h-4" /> : <BookmarkPlus className="w-4 h-4" />}

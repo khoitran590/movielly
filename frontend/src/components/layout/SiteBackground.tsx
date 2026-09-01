@@ -114,11 +114,11 @@ export default function SiteBackground() {
   }, []);
 
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden bg-surface-900" aria-hidden="true">
-      <canvas ref={canvasRef} className="absolute inset-0" style={{ filter: 'blur(15px)' }} />
+    <div className="site-background fixed inset-0 -z-10 overflow-hidden bg-surface-900" aria-hidden="true">
+      <canvas ref={canvasRef} className="site-background-canvas absolute inset-0" style={{ filter: 'blur(15px)' }} />
       {/* Light tint so foreground text stays legible; no backdrop-filter (cheap
           on low-end GPUs — the canvas is already blurred). */}
-      <div className="absolute inset-0 bg-surface-900/30" />
+      <div className="site-background-tint absolute inset-0 bg-surface-900/30" />
     </div>
   );
 }

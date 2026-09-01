@@ -38,10 +38,13 @@ export function RailSkeleton({ title }: { title?: string }) {
 // chevrons only where there is a real pointer to click them with.
 export default function PosterRail({ title, movies, eyebrow, description, href, onViewAll, loading = false }: PosterRailProps) {
   const scroller = useRef<HTMLDivElement>(null);
+  const uniqueMovies = Array.from(
+    new Map(movies.map(movie => [`${movie.media_type || 'movie'}-${movie.id}`, movie])).values()
+  );
 
   if (loading) return <RailSkeleton title={title} />;
   // A rail that failed to load is omitted entirely rather than shown empty.
-  if (movies.length === 0) return null;
+  if (uniqueMovies.length === 0) return null;
 
   const scrollBy = (direction: 1 | -1) => {
     const el = scroller.current;
@@ -76,7 +79,7 @@ export default function PosterRail({ title, movies, eyebrow, description, href, 
           role="region"
           className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 sm:gap-4"
         >
-          {movies.map(movie => (
+          {uniqueMovies.map(movie => (
             <div key={`${movie.media_type || 'movie'}-${movie.id}`} className={`${CARD_WIDTH} shrink-0 snap-start`}>
               <MovieCard movie={movie} variant="rail" />
             </div>

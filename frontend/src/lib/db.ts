@@ -7,6 +7,20 @@ import type { WatchlistItem, FavoriteItem, Review, FriendProfile, TopMovie } fro
 import type { TitleType } from './titleIdentity';
 
 const supabase = createClient();
+// Supabase returns plain `{ message, details, hint, code }` objects, not Error
+// instances. Throwing those raw surfaces as "[object Object]" in the Next.js
+// error overlay and in Sentry, so wrap every one in a real Error first.
+const dbError = (error: { message?: string; details?: string | null; hint?: string | null; code?: string }): Error => {
+  const parts = [error.message || 'Supabase request failed'];
+  if (error.code) parts.push(`(code ${error.code})`);
+  if (error.details) parts.push(`— ${error.details}`);
+  if (error.hint) parts.push(`Hint: ${error.hint}`);
+  const wrapped = new Error(parts.join(' '));
+  wrapped.name = 'SupabaseError';
+  wrapped.cause = error;
+  return wrapped;
+};
+
 const FRIENDSHIP_LIMIT = 200;
 const WATCHLIST_COLUMNS = 'id, user_id, movie_id, movie_title, movie_poster, movie_type, added_at, title_status, watched_at';
 const FAVORITE_COLUMNS = 'id, user_id, movie_id, movie_title, movie_poster, movie_type, added_at';
@@ -70,7 +84,7 @@ export const profiles = {
       .select(PROFILE_COLUMNS)
       .eq('id', id)
       .maybeSingle();
-    if (error) throw error;
+    if (error) throw dbError(error);
     return data ? toProfile(data) : null;
   },
 
@@ -79,7 +93,7 @@ export const profiles = {
       .from('profiles')
       .select(PROFILE_COLUMNS)
       .in('id', ids);
-    if (error) throw error;
+    if (error) throw dbError(error);
     return (data || []).map(toProfile);
   },
 
@@ -120,7 +134,7 @@ const titleList = (table: TitleListTable) => ({
       .select(table === 'watchlist' ? WATCHLIST_COLUMNS : FAVORITE_COLUMNS)
       .eq('user_id', userId)
       .order('added_at', { ascending: false });
-    if (error) throw error;
+    if (error) throw dbError(error);
     return (data as unknown as TitleListItem[]) || [];
   },
 
@@ -130,13 +144,13 @@ const titleList = (table: TitleListTable) => ({
       .insert({ ...item, user_id: userId })
       .select(table === 'watchlist' ? WATCHLIST_COLUMNS : FAVORITE_COLUMNS)
       .single();
-    if (error) throw error;
+    if (error) throw dbError(error);
     return (data as unknown as TitleListItem | null) ?? null;
   },
 
   remove: async (userId: string, movieType: TitleType, movieId: number): Promise<void> => {
     const { error } = await supabase.from(table).delete().eq('user_id', userId).eq('movie_type', movieType).eq('movie_id', movieId);
-    if (error) throw error;
+    if (error) throw dbError(error);
   },
 });
 
@@ -149,7 +163,7 @@ export const watchlist = {
       .eq('user_id', userId)
       .eq('movie_type', movieType)
       .eq('movie_id', movieId);
-    if (error) throw error;
+    if (error) throw dbError(error);
   },
 };
 export const favorites = titleList('favorites');
@@ -163,7 +177,7 @@ export const preferences = {
       .select('region, preferred_provider_ids, updated_at')
       .eq('user_id', userId)
       .maybeSingle();
-    if (error) throw error;
+    if (error) throw dbError(error);
     if (!data) return { region: 'US', preferred_provider_ids: [] as number[], updated_at: null };
     return {
       region: data.region,
@@ -181,7 +195,7 @@ export const preferences = {
       preferred_provider_ids: preferredProviderIds,
       updated_at: new Date().toISOString(),
     });
-    if (error) throw error;
+    if (error) throw dbError(error);
   },
 };
 
@@ -197,7 +211,7 @@ export const reviews = {
       .eq('movie_type', movieType)
       .eq('movie_id', movieId)
       .order('created_at', { ascending: false });
-    if (error) throw error;
+    if (error) throw dbError(error);
     return (data as unknown as Review[]) || [];
   },
 
@@ -209,7 +223,7 @@ export const reviews = {
       .select(REVIEW_COLUMNS)
       .eq('user_id', userId)
       .order('updated_at', { ascending: false });
-    if (error) throw error;
+    if (error) throw dbError(error);
     return (data as Review[]) || [];
   },
 
@@ -229,7 +243,7 @@ export const reviews = {
 
   remove: async (userId: string, movieType: TitleType, movieId: number): Promise<void> => {
     const { error } = await supabase.from('reviews').delete().eq('user_id', userId).eq('movie_type', movieType).eq('movie_id', movieId);
-    if (error) throw error;
+    if (error) throw dbError(error);
   },
 };
 
@@ -371,8 +385,8 @@ export const activity = {
         .limit(40),
       profiles.getMany(friendIds),
     ]);
-    if (reviewRes.error) throw reviewRes.error;
-    if (watchedRes.error) throw watchedRes.error;
+    if (reviewRes.error) throw dbError(reviewRes.error);
+    if (watchedRes.error) throw dbError(watchedRes.error);
 
     const profileMap = Object.fromEntries(profs.map(p => [p.id, p]));
     const entries: import('@/types').FeedEntry[] = [];

@@ -1,9 +1,13 @@
 const { withSentryConfig } = require('@sentry/nextjs');
+const path = require('node:path');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   turbopack: {
-    root: __dirname,
+    // npm workspaces hoists Next and shared packages to the repository root.
+    // Keep Turbopack's hermetic filesystem boundary aligned with that root
+    // instead of the nested frontend/package-lock.json location.
+    root: path.resolve(__dirname, '..'),
   },
   images: {
     remotePatterns: [

@@ -93,7 +93,7 @@ export default function SideRail({
               title={expanded ? undefined : 'Edit profile'}
               className={`focus-ring flex h-10 items-center rounded-lg text-fog hover:bg-seat hover:text-screen ${expanded ? 'gap-3 px-3' : 'justify-center'}`}
             >
-              <Settings className="h-4 w-4" />
+              <Settings className="h-[18px] w-[18px]" />
               {expanded && <span className="text-ui">Edit profile</span>}
             </Link>
             <button
@@ -102,17 +102,17 @@ export default function SideRail({
               onClick={() => void signOut()}
               className={`focus-ring flex h-10 w-full items-center rounded-lg text-fog hover:bg-seat hover:text-screen ${expanded ? 'gap-3 px-3' : 'justify-center'}`}
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-[18px] w-[18px]" />
               {expanded && <span className="text-ui">Sign out</span>}
             </button>
           </>
         ) : (
           <>
             <Link href="/login" title={expanded ? undefined : 'Log in'} className={`focus-ring flex h-10 items-center rounded-lg text-fog hover:bg-seat hover:text-screen ${expanded ? 'gap-3 px-3' : 'justify-center'}`}>
-              <LogIn className="h-4 w-4" />{expanded && <span className="text-ui">Log in</span>}
+              <LogIn className="h-[18px] w-[18px]" />{expanded && <span className="text-ui">Log in</span>}
             </Link>
             <Link href="/signup" title={expanded ? undefined : 'Sign up'} className={`focus-ring flex h-10 items-center rounded-lg text-tungsten hover:bg-seat ${expanded ? 'gap-3 px-3' : 'justify-center'}`}>
-              <UserPlus className="h-4 w-4" />{expanded && <span className="text-ui">Sign up</span>}
+              <UserPlus className="h-[18px] w-[18px]" />{expanded && <span className="text-ui">Sign up</span>}
             </Link>
           </>
         )}

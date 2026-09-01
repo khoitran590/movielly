@@ -97,6 +97,16 @@
     max-width: 100%;
   }
 
+  /* Light mode keeps the paper-like cinema palette quiet and warm. The dark
+     mode beam field is intentionally removed here so blue light does not fight
+     the parchment surfaces. */
+  .light body {
+    background:
+      radial-gradient(1100px 520px at 50% -10%, rgb(var(--color-tungsten) / 0.055), transparent 62%),
+      linear-gradient(180deg, rgb(var(--color-velvet) / 0.5), transparent 360px),
+      rgb(var(--color-ink));
+  }
+
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -195,6 +205,28 @@
   /* Slightly more opaque, for controls that must stay readable over a backdrop. */
   .glass-tinted {
     background: rgb(var(--color-ink) / 0.88);
+  }
+
+  .light .glass {
+    background: rgb(var(--color-velvet) / 0.92);
+    border-color: rgb(var(--color-screen) / 0.1);
+    box-shadow: 0 10px 30px rgb(var(--color-screen) / 0.08);
+  }
+
+  .light .glass-tinted {
+    background: rgb(var(--color-velvet) / 0.96);
+  }
+
+  .light .site-background {
+    background-color: transparent;
+  }
+
+  .light .site-background-canvas {
+    opacity: 0;
+  }
+
+  .light .site-background-tint {
+    background: linear-gradient(180deg, rgb(var(--color-velvet) / 0.58), transparent 420px);
   }
 
   /* ── Poster card behaviour ──────────────────────────────────────────

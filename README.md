@@ -27,11 +27,55 @@ npm run install:all   # installs backend + frontend deps
 npm run dev           # starts backend :3001 and frontend :3000
 ```
 
+## Native mobile app (Expo SDK 57)
+
+The `mobile/` workspace is a native Expo Router app for iOS and Android. It shares the existing Express API, Supabase project, data, and public links with the web app.
+
+Install everything once:
+
+```bash
+npm install
+```
+
+Run the backend and Expo together, then scan the QR code with Expo Go while your computer and phone are on the same Wi-Fi:
+
+```bash
+npm run dev:native
+```
+
+The startup script safely copies only public client configuration from `frontend/.env` into an ignored `mobile/.env.local`, and replaces `localhost` with the computer’s LAN address so a physical phone can reach the API. If auto-detection is not suitable, copy `mobile/.env.example` to `mobile/.env` and set `EXPO_PUBLIC_API_URL` explicitly. Never put the Supabase service-role key in a mobile environment file.
+
+To build and launch the native iOS project in an Xcode simulator:
+
+```bash
+npm run dev --prefix backend
+npm run ios
+```
+
+The first `npm run ios` performs Expo prebuild and creates the ignored `mobile/ios` native project. Use `npm run ios:go --workspace @movielly/mobile` when you prefer Expo Go in the iOS simulator. If LAN discovery is blocked, use `npm run start:tunnel --workspace @movielly/mobile` for a phone QR code.
+
+Supabase Auth must allow these redirect URLs:
+
+```text
+movielly://auth/callback
+movielly://reset-password
+```
+
+Useful checks:
+
+```bash
+npm run typecheck:mobile
+npm run test:mobile
+npx expo-doctor mobile
+```
+
 ## Project structure
 
 ```
 backend/    Express API (TMDB proxy, trailers, shared lists)
 frontend/   Next.js app (App Router)
+mobile/     Expo SDK 57 native app (Expo Router)
+packages/core/ Shared types, API client, validation, and pure helpers
 supabase/   schema.sql — tables, RLS policies, triggers
 ```
 

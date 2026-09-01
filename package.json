@@ -2,13 +2,44 @@
   "name": "movielly",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "mobile",
+    "packages/core"
+  ],
   "scripts": {
     "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
-    "install:all": "npm install --prefix backend && npm install --prefix frontend",
+    "dev:mobile": "npm run start --workspace @movielly/mobile",
+    "dev:native": "concurrently \"npm run dev --prefix backend\" \"npm run start --workspace @movielly/mobile\"",
+    "ios": "npm run ios --workspace @movielly/mobile",
+    "android": "npm run android --workspace @movielly/mobile",
+    "install:all": "npm install",
     "build": "npm run build --prefix frontend",
-    "start": "concurrently \"npm run start --prefix backend\" \"npm run start --prefix frontend\""
+    "start": "concurrently \"npm run start --prefix backend\" \"npm run start --prefix frontend\"",
+    "test:mobile": "npm run test --workspace @movielly/mobile",
+    "typecheck:mobile": "npm run typecheck --workspace @movielly/mobile"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "react": "19.2.3",
+    "react-native-gesture-handler": "2.32.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "5.7.0",
+    "react-native-screens": "4.26.2",
+    "react-native-svg": "15.15.4",
+    "react-native-worklets": "0.10.1",
+    "react-test-renderer": "19.2.3"
+  },
+  "overrides": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-test-renderer": "19.2.3",
+    "react-native-gesture-handler": "2.32.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "5.7.0",
+    "react-native-screens": "4.26.2",
+    "react-native-svg": "15.15.4",
+    "react-native-worklets": "0.10.1"
   }
 }

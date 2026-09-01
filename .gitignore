@@ -23,6 +23,12 @@ build/
 **/*.tsbuildinfo
 next-env.d.ts
 
+# expo
+.expo/
+**/.expo/
+mobile/ios/
+mobile/android/
+
 # logs
 *.log
 npm-debug.log*
